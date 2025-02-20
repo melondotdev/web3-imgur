@@ -1,12 +1,13 @@
 'use client';
-import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
+import { trimAddress } from '@/lib/utils/trim-address';
+import { ConnectModal, useWallet } from '@suiet/wallet-kit';
 import { Flame, Plus, Wallet } from 'lucide-react';
 import { useState } from 'react';
-import { trimAddress } from '../lib/utils/trim-address';
 import { CreatePostModal } from './CreatePostModal';
 
 export function Header() {
-  const currentAccount = useCurrentAccount();
+  const wallet = useWallet();
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // TODO: Imo it shouldn't be there but for now it'll do
@@ -26,38 +27,50 @@ export function Header() {
             <div className="flex items-center space-x-4">
               <button
                 type="button"
-                disabled={!currentAccount}
+                disabled={wallet.status !== 'connected'}
                 onClick={() => setIsCreateModalOpen(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
               >
                 <Plus className="w-5 h-5" />
                 <span>create</span>
               </button>
+
               <ConnectModal
-                trigger={
-                  <button
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
-                    type="button"
-                  >
-                    <Wallet className="w-5 h-5" />
-                    <span>
-                      {currentAccount
-                        ? trimAddress(currentAccount.address)
-                        : 'connect wallet'}
-                    </span>
-                  </button>
-                }
-              />
+                open={isConnectModalOpen}
+                onConnectSuccess={() => {
+                  setIsConnectModalOpen(false);
+                }}
+              >
+                <button
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
+                  type="button"
+                  onClick={() => {
+                    if (wallet.status !== 'connected') {
+                      setIsConnectModalOpen(true);
+                    } else {
+                      wallet.disconnect();
+                      // TODO: Implement disconnect
+                    }
+                  }}
+                >
+                  <Wallet className="w-5 h-5" />
+                  <span>
+                    {wallet.status === 'connected' && wallet.address
+                      ? trimAddress(wallet.address)
+                      : 'connect wallet'}
+                  </span>
+                </button>
+              </ConnectModal>
             </div>
           </div>
         </div>
       </header>
-      {currentAccount && (
+      {wallet.status === 'connected' && wallet.address && (
         <CreatePostModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={handleCreatePost}
-          walletAddress={currentAccount.address}
+          walletAddress={wallet.address}
         />
       )}
     </>

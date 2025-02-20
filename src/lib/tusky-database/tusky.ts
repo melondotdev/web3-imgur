@@ -1,16 +1,25 @@
-import * as tus from 'tus-js-client';
+import { Upload } from 'tus-js-client';
 
 export function uploadImageUsingTus(image: File): Promise<string> {
+  if (
+    !process.env.NEXT_PUBLIC_TUSKY_API_KEY ||
+    !process.env.NEXT_PUBLIC_TUSKY_VAULT_ID
+  ) {
+    throw new Error('Missing Tusky API configuration');
+  }
+
   return new Promise((resolve, reject) => {
-    const upload = new tus.Upload(image, {
+    const upload = new Upload(image, {
       endpoint: 'https://api.tusky.io/uploads/',
       headers: {
-        'Api-Key': process.env.NEXT_PUBLIC_TUSKY_API_KEY || '',
-      },
-      metadata: {
-        filename: image.name,
-        filetype: image.type,
-        vaultId: process.env.NEXT_PUBLIC_TUSKY_VAULT_ID!,
+        'Api-Key': process.env.NEXT_PUBLIC_TUSKY_API_KEY,
+        'Tus-Resumable': '1.0.0',
+        'Upload-Metadata': {
+          filename: image.name,
+          filetype: image.type,
+          vaultId: process.env.NEXT_PUBLIC_TUSKY_VAULT_ID,
+        },
+        'Upload-Length': image.size,
       },
       onError: (error) => {
         console.error('Upload failed:', error.message);
@@ -24,12 +33,13 @@ export function uploadImageUsingTus(image: File): Promise<string> {
       },
       onSuccess: () => {
         console.log('Upload completed successfully!');
-        // upload.url contains the location of the uploaded file.
         if (!upload.url) {
           reject(new Error('Upload URL is null'));
           return;
         }
-        resolve(upload.url);
+        const fileId = upload.url.split('/').pop();
+        const fileUrl = `https://api.tusky.io/files/${fileId}/data`;
+        resolve(fileUrl);
       },
     });
 
