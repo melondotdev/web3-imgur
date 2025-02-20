@@ -1,23 +1,20 @@
-import { Plus, Wallet, Flame } from 'lucide-react';
-
+import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
+import { Flame, Plus, Wallet } from 'lucide-react';
+import { useState } from 'react';
+import { trimAddress } from '../lib/utils/trim-address';
 interface HeaderProps {
-  isWalletConnected: boolean;
   onCreateClick: () => void;
-  onWalletClick: (walletAddress: string) => void;
-  setWalletAddress: (walletAddress: string) => void;
 }
 
-export function Header({ isWalletConnected, onCreateClick, onWalletClick, setWalletAddress }: HeaderProps) {
+export function Header({ onCreateClick }: HeaderProps) {
+  const currentAccount = useCurrentAccount();
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+
   const handleWalletClick = () => {
-    if (!isWalletConnected) {
-      const address = prompt('Please enter your wallet address:');
-      if (address) {
-        setWalletAddress(address);
-        onWalletClick(address);
-      }
+    if (currentAccount) {
+      currentAccount.signOut();
     } else {
-      setWalletAddress('');
-      onWalletClick('');
+      currentAccount.signIn();
     }
   };
 
@@ -31,19 +28,28 @@ export function Header({ isWalletConnected, onCreateClick, onWalletClick, setWal
           </div>
           <div className="flex items-center space-x-4">
             <button
+              type="button"
               onClick={onCreateClick}
               className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
             >
               <Plus className="w-5 h-5" />
               <span>create</span>
             </button>
-            <button
-              onClick={handleWalletClick}
-              className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
-            >
-              <Wallet className="w-5 h-5" />
-              <span>{isWalletConnected ? 'disconnect' : 'connect wallet'}</span>
-            </button>
+            <ConnectModal
+              trigger={
+                <button
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
+                  type="button"
+                >
+                  <Wallet className="w-5 h-5" />
+                  <span>
+                    {currentAccount
+                      ? trimAddress(currentAccount.address)
+                      : 'connect wallet'}
+                  </span>
+                </button>
+              }
+            />
           </div>
         </div>
       </div>
