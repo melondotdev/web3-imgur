@@ -1,3 +1,4 @@
+'use client';
 import {
   SuiClientProvider,
   WalletProvider,
@@ -7,7 +8,6 @@ import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PropsWithChildren } from 'react';
 
-// Config options for the networks you want to connect to
 const { networkConfig } = createNetworkConfig({
   mainnet: { url: getFullnodeUrl('mainnet') },
 });

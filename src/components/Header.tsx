@@ -1,48 +1,65 @@
+'use client';
 import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
 import { Flame, Plus, Wallet } from 'lucide-react';
+import { useState } from 'react';
 import { trimAddress } from '../lib/utils/trim-address';
-interface HeaderProps {
-  onCreateClick: () => void;
-}
+import { CreatePostModal } from './CreatePostModal';
 
-export function Header({ onCreateClick }: HeaderProps) {
+export function Header() {
   const currentAccount = useCurrentAccount();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // TODO: Imo it shouldn't be there but for now it'll do
+  const handleCreatePost = (imageUrl: string, comment: string) => {
+    console.log(imageUrl, comment);
+  };
 
   return (
-    <header className="bg-gray-900 border-b border-yellow-500/20">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Flame className="w-6 h-6 text-yellow-500" />
-            <h1 className="text-2xl font-bold text-yellow-500">meme.fun</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={onCreateClick}
-              className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
-            >
-              <Plus className="w-5 h-5" />
-              <span>create</span>
-            </button>
-            <ConnectModal
-              trigger={
-                <button
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
-                  type="button"
-                >
-                  <Wallet className="w-5 h-5" />
-                  <span>
-                    {currentAccount
-                      ? trimAddress(currentAccount.address)
-                      : 'connect wallet'}
-                  </span>
-                </button>
-              }
-            />
+    <>
+      <header className="bg-gray-900 border-b border-yellow-500/20">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Flame className="w-6 h-6 text-yellow-500" />
+              <h1 className="text-2xl font-bold text-yellow-500">meme.fun</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                type="button"
+                disabled={!currentAccount}
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
+              >
+                <Plus className="w-5 h-5" />
+                <span>create</span>
+              </button>
+              <ConnectModal
+                trigger={
+                  <button
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
+                    type="button"
+                  >
+                    <Wallet className="w-5 h-5" />
+                    <span>
+                      {currentAccount
+                        ? trimAddress(currentAccount.address)
+                        : 'connect wallet'}
+                    </span>
+                  </button>
+                }
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+      {currentAccount && (
+        <CreatePostModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={handleCreatePost}
+          walletAddress={currentAccount.address}
+        />
+      )}
+    </>
   );
 }

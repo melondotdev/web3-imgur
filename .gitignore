@@ -11,9 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.next
 
-.env
-.env.local
+# env files (can opt-in for committing if needed)
+.env*
 
 # Editor directories and files
 !.vscode/extensions.json
@@ -25,8 +26,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# env files (can opt-in for committing if needed)
-.env*
 
 # biome
 .biome

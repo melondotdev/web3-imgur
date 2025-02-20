@@ -5,12 +5,12 @@ export function uploadImageUsingTus(image: File): Promise<string> {
     const upload = new tus.Upload(image, {
       endpoint: 'https://api.tusky.io/uploads/',
       headers: {
-        'Api-Key': import.meta.env.VITE_TUSKY_API_KEY || '',
+        'Api-Key': process.env.NEXT_PUBLIC_TUSKY_API_KEY || '',
       },
       metadata: {
         filename: image.name,
         filetype: image.type,
-        vaultId: import.meta.env.VITE_TUSKY_VAULT_ID,
+        vaultId: process.env.NEXT_PUBLIC_TUSKY_VAULT_ID!,
       },
       onError: (error) => {
         console.error('Upload failed:', error.message);
@@ -18,7 +18,9 @@ export function uploadImageUsingTus(image: File): Promise<string> {
       },
       onProgress: (bytesUploaded, bytesTotal) => {
         const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-        console.log(`Progress: ${percentage}% (${bytesUploaded}/${bytesTotal} bytes)`);
+        console.log(
+          `Progress: ${percentage}% (${bytesUploaded}/${bytesTotal} bytes)`,
+        );
       },
       onSuccess: () => {
         console.log('Upload completed successfully!');
@@ -30,7 +32,7 @@ export function uploadImageUsingTus(image: File): Promise<string> {
         resolve(upload.url);
       },
     });
-    
+
     upload.start();
   });
 }

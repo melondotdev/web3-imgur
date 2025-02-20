@@ -4,15 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "format": "biome format --write .",
     "lint": "biome lint --write .",
     "lint:unsafe": "biome lint --write --unsafe .",
     "ci:check": "biome ci --formatter-enabled=false --linter-enabled=false",
     "ci:format": "biome ci --linter-enabled=false --organize-imports-enabled=false",
-    "ci:lint": "biome ci --formatter-enabled=false --organize-imports-enabled=false",
-    "preview": "vite preview"
+    "ci:lint": "biome ci --formatter-enabled=false --organize-imports-enabled=false"
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.14.50",
@@ -20,8 +20,9 @@
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-query": "^5.66.7",
     "lucide-react": "^0.344.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
     "tus-js-client": "^4.3.1"
   },
