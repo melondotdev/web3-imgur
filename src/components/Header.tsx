@@ -1,6 +1,5 @@
 import { ConnectModal, useCurrentAccount } from '@mysten/dapp-kit';
 import { Flame, Plus, Wallet } from 'lucide-react';
-import { useState } from 'react';
 import { trimAddress } from '../lib/utils/trim-address';
 interface HeaderProps {
   onCreateClick: () => void;
@@ -8,15 +7,6 @@ interface HeaderProps {
 
 export function Header({ onCreateClick }: HeaderProps) {
   const currentAccount = useCurrentAccount();
-  const [connectModalOpen, setConnectModalOpen] = useState(false);
-
-  const handleWalletClick = () => {
-    if (currentAccount) {
-      currentAccount.signOut();
-    } else {
-      currentAccount.signIn();
-    }
-  };
 
   return (
     <header className="bg-gray-900 border-b border-yellow-500/20">
