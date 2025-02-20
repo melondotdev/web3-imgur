@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Wallet } from 'lucide-react';
+import { Plus, Wallet, Flame } from 'lucide-react';
 
 interface HeaderProps {
   isWalletConnected: boolean;
@@ -13,12 +13,8 @@ export function Header({ isWalletConnected, onCreateClick, onWalletClick }: Head
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img 
-              src="/assets/logo.png" 
-              alt="bork" 
-              className="w-8 h-8 rounded-full object-cover border border-yellow-500/20"
-            />
-            <h1 className="text-2xl font-bold text-yellow-500">bork.fun</h1>
+            <Flame className="w-6 h-6 text-yellow-500" />
+            <h1 className="text-2xl font-bold text-yellow-500">meme.fun</h1>
           </div>
           <div className="flex items-center space-x-4">
             <button
