@@ -1,13 +1,26 @@
-import React from 'react';
 import { Plus, Wallet, Flame } from 'lucide-react';
 
 interface HeaderProps {
   isWalletConnected: boolean;
   onCreateClick: () => void;
-  onWalletClick: () => void;
+  onWalletClick: (walletAddress: string) => void;
+  setWalletAddress: (walletAddress: string) => void;
 }
 
-export function Header({ isWalletConnected, onCreateClick, onWalletClick }: HeaderProps) {
+export function Header({ isWalletConnected, onCreateClick, onWalletClick, setWalletAddress }: HeaderProps) {
+  const handleWalletClick = () => {
+    if (!isWalletConnected) {
+      const address = prompt('Please enter your wallet address:');
+      if (address) {
+        setWalletAddress(address);
+        onWalletClick(address);
+      }
+    } else {
+      setWalletAddress('');
+      onWalletClick('');
+    }
+  };
+
   return (
     <header className="bg-gray-900 border-b border-yellow-500/20">
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -25,7 +38,7 @@ export function Header({ isWalletConnected, onCreateClick, onWalletClick }: Head
               <span>create</span>
             </button>
             <button
-              onClick={onWalletClick}
+              onClick={handleWalletClick}
               className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
             >
               <Wallet className="w-5 h-5" />

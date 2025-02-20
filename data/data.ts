@@ -1,4 +1,4 @@
-import { Post, User } from './types';
+import { Post, User } from '../src/types';
 
 export const mockPosts: Post[] = [
   {

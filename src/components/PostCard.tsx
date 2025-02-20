@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowBigUp, MessageCircle } from 'lucide-react';
 import { Post } from '../types';
 

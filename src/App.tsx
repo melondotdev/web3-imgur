@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Post } from './types';
-import { mockPosts, mockUsers } from './data';
+import { mockPosts, mockUsers } from '../data/data';
 import { PostModal } from './components/PostModal';
 import { CreatePostModal } from './components/CreatePostModal';
 import { Header } from './components/Header';
@@ -11,8 +11,9 @@ function App() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
   const currentUser = mockUsers[0];
-
+  
   const handleVote = (postId: string) => {
     setPosts(posts.map(post => 
       post.id === postId 
@@ -20,7 +21,7 @@ function App() {
         : post
     ));
   };
-
+  
   const handleComment = (postId: string, content: string) => {
     setPosts(posts.map(post => 
       post.id === postId
@@ -67,6 +68,7 @@ function App() {
         isWalletConnected={isWalletConnected}
         onCreateClick={() => setIsCreateModalOpen(true)}
         onWalletClick={() => setIsWalletConnected(!isWalletConnected)}
+        setWalletAddress={setWalletAddress}
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -81,6 +83,7 @@ function App() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreatePost}
+        walletAddress={walletAddress}
       />
 
       {selectedPost && (

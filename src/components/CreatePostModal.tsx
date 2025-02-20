@@ -1,32 +1,50 @@
+// CreatePostModal.tsx
+
 import React, { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { Modal } from './Modal';
+import { uploadImageUsingTus } from '../lib/tusky-database/tusky'; // Adjust the path as needed
+import { supabase } from '../lib/web2-database/supabase'; // Adjust the path to your supabase client
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (imageUrl: string, comment: string) => void;
+  walletAddress: string;
 }
 
-export function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePostModalProps) {
-  const [imageUrl, setImageUrl] = useState('');
+export function CreatePostModal({ isOpen, onClose, onSubmit, walletAddress }: CreatePostModalProps) {
+  // Instead of storing a URL string, we now store the actual file.
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [comment, setComment] = useState('');
   const [preview, setPreview] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (imageUrl && comment) {
+    if (!imageFile || !comment) return;
+
+    try {
+      // Upload image to Walrus using the tusky.ts function
+      const imageUrl = await uploadImageUsingTus(imageFile);
+
+      // Save the URL and comment to Supabase
+      const { error } = await supabase.from('posts').insert([{ image_url: imageUrl, comment, wallet_address: walletAddress }]);
+      if (error) {
+        throw error;
+      }
+      
+      // Optionally call the onSubmit callback with the image URL and comment
       onSubmit(imageUrl, comment);
-      setImageUrl('');
+
+      // Reset local state and close modal
+      setImageFile(null);
       setComment('');
       setPreview('');
       onClose();
+    } catch (error) {
+      console.error('Upload or save failed:', error);
+      // Optionally, show a user-friendly error message here
     }
-  };
-
-  const handleImageUrlChange = (url: string) => {
-    setImageUrl(url);
-    setPreview(url);
   };
 
   return (
@@ -44,7 +62,7 @@ export function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePostModalPr
               <button
                 type="button"
                 onClick={() => {
-                  setImageUrl('');
+                  setImageFile(null);
                   setPreview('');
                 }}
                 className="absolute top-2 right-2 p-1 bg-gray-900/80 rounded-full text-yellow-500 hover:text-yellow-400"
@@ -60,9 +78,11 @@ export function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePostModalPr
                   accept="image/*"
                   className="hidden"
                   onChange={(e) => {
-                    // Note: In a real implementation, this would handle file upload
-                    // For now, we'll use a placeholder URL
-                    handleImageUrlChange('/assets/GkGfKESXgAA_7Ls.jpeg');
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      setImageFile(file);
+                      setPreview(URL.createObjectURL(file));
+                    }
                   }}
                 />
                 <div className="space-y-2">
