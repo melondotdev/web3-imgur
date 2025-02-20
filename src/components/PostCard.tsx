@@ -1,0 +1,45 @@
+import React from 'react';
+import { ArrowBigUp, MessageCircle } from 'lucide-react';
+import { Post } from '../types';
+
+interface PostCardProps {
+  post: Post;
+  onVote: (id: string) => void;
+  onClick: () => void;
+}
+
+export function PostCard({ post, onVote, onClick }: PostCardProps) {
+  return (
+    <div 
+      className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02]"
+      onClick={onClick}
+    >
+      <img 
+        src={post.imageUrl} 
+        alt="user content"
+        className="w-full h-auto"
+      />
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-yellow-500/80">@{post.author}</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1 text-yellow-500/80">
+              <MessageCircle className="w-4 h-4" />
+              <span>{post.comments.length}</span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onVote(post.id);
+              }}
+              className="flex items-center space-x-2 text-yellow-500 hover:text-yellow-400"
+            >
+              <ArrowBigUp className="w-5 h-5" />
+              <span>{post.votes}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
