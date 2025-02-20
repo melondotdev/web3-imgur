@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "format": "biome format --write .",
+    "lint": "biome lint --write .",
+    "lint:unsafe": "biome lint --write --unsafe .",
+    "ci:check": "biome ci --formatter-enabled=false --linter-enabled=false",
+    "ci:format": "biome ci --linter-enabled=false --organize-imports-enabled=false",
+    "ci:lint": "biome ci --formatter-enabled=false --organize-imports-enabled=false",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,19 +23,15 @@
     "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.1",
+    "@biomejs/biome": "^1.9.4",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.18",
-    "eslint": "^9.9.1",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
   }
 }
