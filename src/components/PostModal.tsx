@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { Modal } from '@/components/base/Modal';
+import type { Post } from '@/lib/types/response/create-post-response';
 import { ConnectButton, useWallet } from '@suiet/wallet-kit';
 import { ArrowBigUp, Send } from 'lucide-react';
-import { Modal } from './Modal';
-import { Post } from '../types';
+import { useEffect, useState } from 'react';
 
 interface Comment {
   id: string;
@@ -21,7 +21,13 @@ interface PostModalProps {
   onComment?: (postId: string, content: string, signature: string) => void;
 }
 
-export function PostModal({ post, isOpen, onClose, onVote, onComment }: PostModalProps) {
+export function PostModal({
+  post,
+  isOpen,
+  onClose,
+  onVote,
+  onComment,
+}: PostModalProps) {
   const [newComment, setNewComment] = useState('');
   // Local comments state for immediate UI updates.
   const [localComments, setLocalComments] = useState<Comment[]>(post.comments);
@@ -41,7 +47,7 @@ export function PostModal({ post, isOpen, onClose, onVote, onComment }: PostModa
         const msgBytes = new TextEncoder().encode(trimmed);
         // Sign the message using the connected wallet.
         const result = await wallet.signPersonalMessage({ message: msgBytes });
-        
+
         // Build a transient comment object.
         const newCommentObj: Comment = {
           id: Date.now().toString(), // Use a timestamp as a simple unique ID.
@@ -68,7 +74,11 @@ export function PostModal({ post, isOpen, onClose, onVote, onComment }: PostModa
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="flex flex-col md:flex-row">
         <div className="md:w-2/3">
-          <img src={post.imageUrl} alt="post content" className="w-full h-auto" />
+          <img
+            src={post.imageUrl}
+            alt="post content"
+            className="w-full h-auto"
+          />
         </div>
         <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
           <div className="flex items-center justify-between mb-4">
@@ -84,7 +94,10 @@ export function PostModal({ post, isOpen, onClose, onVote, onComment }: PostModa
 
           <div className="space-y-4 mb-6 max-h-[50vh] overflow-y-auto">
             {localComments.map((comment) => (
-              <div key={comment.id} className="border-b border-yellow-500/10 pb-4">
+              <div
+                key={comment.id}
+                className="border-b border-yellow-500/10 pb-4"
+              >
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-yellow-500/80">@{comment.author}</span>
                   <span className="text-xs text-yellow-500/50">

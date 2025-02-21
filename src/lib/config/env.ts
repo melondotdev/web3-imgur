@@ -12,15 +12,16 @@ const envSchema = z.object({
     .default('development'),
 });
 
-// Parse and validate environment variables
-const envParse = envSchema.safeParse(process.env);
+export function getEnv() {
+  // Parse and validate environment variables
+  const envParse = envSchema.safeParse(process.env);
 
-if (!envParse.success) {
-  console.error(
-    '❌ Invalid environment variables:',
-    envParse.error.flatten().fieldErrors,
-  );
-  throw new Error('Invalid environment variables');
+  if (!envParse.success) {
+    console.error(
+      '❌ Invalid environment variables:',
+      envParse.error.flatten().fieldErrors,
+    );
+    throw new Error('Invalid environment variables');
+  }
+  return envParse.data;
 }
-
-export const env = envParse.data;

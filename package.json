@@ -15,6 +15,7 @@
     "ci:lint": "biome ci --formatter-enabled=false --organize-imports-enabled=false"
   },
   "dependencies": {
+    "@hookform/resolvers": "^4.1.0",
     "@mysten/sui": "^1.21.2",
     "@suiet/wallet-kit": "^0.3.4",
     "@supabase/supabase-js": "^2.48.1",
@@ -24,6 +25,7 @@
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
     "react-hot-toast": "^2.5.2",
     "tus-js-client": "^4.3.1",
     "zod": "^3.24.2"
