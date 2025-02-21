@@ -1,26 +1,20 @@
+import { env } from '@/lib/config/env';
 import { Upload } from 'tus-js-client';
 
 export function uploadImageUsingTus(image: File): Promise<string> {
-  if (
-    !process.env.NEXT_PUBLIC_TUSKY_API_KEY ||
-    !process.env.NEXT_PUBLIC_TUSKY_VAULT_ID
-  ) {
-    throw new Error('Missing Tusky API configuration');
-  }
-
   return new Promise((resolve, reject) => {
     const upload = new Upload(image, {
       endpoint: 'https://api.tusky.io/uploads/',
       headers: {
-        'Api-Key': process.env.NEXT_PUBLIC_TUSKY_API_KEY,
+        'Api-Key': env.TUSKY_API_KEY,
         'Tus-Resumable': '1.0.0',
-        'Upload-Metadata': {
-          filename: image.name,
-          filetype: image.type,
-          vaultId: process.env.NEXT_PUBLIC_TUSKY_VAULT_ID,
-        },
-        'Upload-Length': image.size,
       },
+      metadata: {
+        filename: image.name,
+        filetype: image.type,
+        vaultId: env.TUSKY_VAULT_ID,
+      },
+      uploadSize: image.size,
       onError: (error) => {
         console.error('Upload failed:', error.message);
         reject(error);
