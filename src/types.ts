@@ -9,13 +9,18 @@ export interface Comment {
 export interface Post {
   id: string;
   imageUrl: string;
-  author: string;
+  username: string;
   votes: number;
   createdAt: string;
-  comments: Comment[];
+  tags: Tag[];
 }
 
 export interface User {
   id: string;
   username: string;
+}
+
+export interface Tag {
+  id: string;
+  text: string;
 }

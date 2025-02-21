@@ -1,14 +1,11 @@
 import { z } from 'zod';
 
 export const createPostFormSchema = z.object({
+  id: z.string().optional(),
   title: z
     .string()
     .min(1, 'Title is required')
     .max(100, 'Title must be less than 100 characters'),
-  comment: z
-    .string()
-    .max(500, 'Comment must be less than 500 characters')
-    .optional(),
   image: z
     .instanceof(File, { message: 'Image is required' })
     .refine((file) => file.size <= 10 * 1024 * 1024, 'Max file size is 10MB')
@@ -19,6 +16,14 @@ export const createPostFormSchema = z.object({
         ),
       'Only .jpg, .jpeg, .png, .webp and .gif formats are supported',
     ),
+  tags: z.array(z.string()).optional(),
+  createdAt: z.string().optional(),
+  votes: z.number().optional(),
+  comments: z
+    .string()
+    .max(500, 'Comment must be less than 500 characters')
+    .optional()
+    .transform((val) => (val ? [val] : [])),
 });
 
 export type CreatePostForm = z.infer<typeof createPostFormSchema>;

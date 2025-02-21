@@ -22,7 +22,7 @@ export function Header() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Flame className="w-6 h-6 text-yellow-500" />
-              <h1 className="text-2xl font-bold text-yellow-500">meme.fun</h1>
+              <h1 className="text-2xl font-bold text-yellow-500">bork.hub</h1>
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -69,7 +69,6 @@ export function Header() {
         <CreatePostModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={handleCreatePost}
           walletAddress={wallet.address}
         />
       )}

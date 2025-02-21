@@ -13,12 +13,12 @@ interface Comment {
 }
 
 interface PostModalProps {
-  post: Post;
+  post: Post & { comments?: Comment[] }; // Adjusted type to allow optional comments array
   isOpen: boolean;
   onClose: () => void;
   onVote: (id: string) => void;
   // Optional callback to persist the comment server-side.
-  onComment?: (postId: string, content: string, signature: string) => void;
+  onComment?: (id: string, content: string, signature: string) => void;
 }
 
 export function PostModal({
@@ -29,14 +29,12 @@ export function PostModal({
   onComment,
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
-  // Local comments state for immediate UI updates.
-  const [localComments, setLocalComments] = useState<Comment[]>(post.comments);
   const wallet = useWallet();
-
-  // Update local comments when the post prop changes.
+  const [localComments, setLocalComments] = useState<Comment[]>([]);
+  
   useEffect(() => {
-    setLocalComments(post.comments);
-  }, [post.comments]);
+    setLocalComments(Array.isArray(post.comments) ? post.comments : []);
+  }, [post.comments]);  
 
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
@@ -57,7 +55,7 @@ export function PostModal({
           signature: result.signature,
         };
 
-        // Optionally pass the comment to an external callback.
+        // Optionally pass the comment to an external callback for server-side persistence.
         if (onComment) {
           onComment(post.id, trimmed, result.signature);
         }
@@ -82,7 +80,8 @@ export function PostModal({
         </div>
         <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-yellow-500/80">@{post.author}</span>
+            {/* Updated to use post.username instead of post.author */}
+            <span className="text-yellow-500/80">@{post.username}</span>
             <button
               onClick={() => onVote(post.id)}
               className="flex items-center space-x-2 text-yellow-500 hover:text-yellow-400"

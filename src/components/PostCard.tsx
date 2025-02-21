@@ -20,11 +20,13 @@ export function PostCard({ post, onVote, onClick }: PostCardProps) {
       />
       <div className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-yellow-500/80">@{post.author}</span>
+          {/* Changed post.author to post.username */}
+          <span className="text-yellow-500/80">@{post.username}</span>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1 text-yellow-500/80">
               <MessageCircle className="w-4 h-4" />
-              <span>{post.comments.length}</span>
+              {/* Use a commentCount property (defaulting to 0 if not provided) */}
+              {/* <span>{post.commentCount ?? 0}</span> */}
             </div>
             <button
               onClick={(e) => {

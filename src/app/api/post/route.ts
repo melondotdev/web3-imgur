@@ -5,8 +5,9 @@ import type {
   CreatePostResponse,
   Post,
 } from '@/lib/types/response/create-post-response';
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { supabaseClient } from '@/lib/web2-database/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +26,62 @@ export async function POST(request: NextRequest) {
       size: file.size,
     });
 
+    // Build the post object (note: comments will be inserted separately)
     const post: Post = {
+      id: validatedData.id || crypto.randomUUID(), // Provide default UUID if id is undefined
       title: validatedData.title,
-      comment: validatedData.comment,
       username: validatedData.username,
       imageUrl,
+      tags: validatedData.tags || [],
+      createdAt: new Date().toISOString(),
+      votes: 0,
+      comments: validatedData.comments, // will use for separate comment insertion
     };
 
+    const supabase = supabaseClient();
+
+    // 1. Insert post data (without comments) into the "posts" table
+    const { data: postData, error: postError } = await supabase
+      .from('posts')
+      .insert({
+        title: post.title,
+        username: post.username,
+        image_url: post.imageUrl,
+        tags: post.tags, // Assuming your column is of type array or JSON
+        created_at: post.createdAt,
+        votes: post.votes,
+      })
+      .select('*')
+      .single();
+
+    if (postError) {
+      console.error('Supabase post insertion error:', postError);
+      return NextResponse.json(
+        { error: 'Failed to insert post into database' } as ApiError,
+        { status: 500 }
+      );
+    }
+
+    // 2. If a comment exists, insert it into the "comments" table
+    if (post.comments && post.comments.length > 0) {
+      const commentContent = post.comments[0]; // Use the first comment if available
+      const { error: commentError } = await supabase
+        .from('comments')
+        .insert({
+          post_id: postData.id,
+          author: post.username,
+          content: commentContent,
+          created_at: new Date().toISOString(),
+        });
+      if (commentError) {
+        console.error('Supabase comment insertion error:', commentError);
+        return NextResponse.json(
+          { error: 'Failed to insert comment into database' } as ApiError,
+          { status: 500 }
+        );
+      }
+    }
+    
     const response: CreatePostResponse = {
       message: 'Post created successfully',
       data: post,
@@ -49,9 +99,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(apiError, { status: 400 });
     }
 
-    return NextResponse.json({ error: 'Failed to create post' } as ApiError, {
-      status: 500,
-    });
+    return NextResponse.json(
+      { error: 'Failed to create post' } as ApiError,
+      { status: 500 }
+    );
   }
 }
 

@@ -17,14 +17,17 @@ const SUI_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{64}$/;
 
 // Schema for the create post request
 export const createPostSchema = z.object({
+  id: z.string().optional(),
   title: z
     .string()
     .min(1, 'Title is required')
     .max(100, 'Title must be less than 100 characters'),
-  comment: z
+  // Rename to "comments" and transform into an array
+  comments: z
     .string()
     .max(500, 'Comment must be less than 500 characters')
-    .optional(),
+    .optional()
+    .transform((val) => (val ? [val] : [])),
   username: z
     .string()
     .regex(
@@ -38,6 +41,7 @@ export const createPostSchema = z.object({
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png, .webp and .gif formats are supported',
     ),
+  tags: z.array(z.string()).optional(),
 });
 
 // Infer the type from the schema
@@ -48,11 +52,13 @@ export function validateCreatePostRequest(
   formData: FormData,
 ): CreatePostRequest {
   const data = {
+    id: formData.get('id'),
     title: formData.get('title'),
-    comment: formData.get('comment'),
     username: formData.get('username'),
     image: formData.get('image'),
+    tags: formData.getAll('tags'), // if multiple tags are sent; otherwise, adjust accordingly
+    comments: formData.get('comments') || "", // using the new field name
   };
-
+  
   return createPostSchema.parse(data);
 }

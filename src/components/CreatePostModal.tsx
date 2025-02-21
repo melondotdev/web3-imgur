@@ -1,6 +1,13 @@
 'use client';
 import { Modal } from '@/components/base/Modal';
-import { createPost } from '@/lib/services/post-service';
+import {
+  handleCreatePost,
+  handleImageFileChange,
+  removeImage,
+  deleteTag,
+  addTag,
+  dragTag,
+} from '@/lib/web2-database/supabase';
 import {
   type CreatePostForm,
   createPostFormSchema,
@@ -10,16 +17,19 @@ import { useWallet } from '@suiet/wallet-kit';
 import { Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
+import { WithContext as ReactTags, SEPARATORS } from 'react-tag-input';
+import type { Tag } from '@/types';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
+  walletAddress: string;
 }
 
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [preview, setPreview] = useState('');
   const { account } = useWallet();
+  const [tags, setTags] = useState<Tag[]>([]);
 
   const {
     register,
@@ -33,46 +43,44 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   });
 
   const onSubmit = async (data: CreatePostForm) => {
-    if (!account) {
-      return;
-    }
-
-    try {
-      await createPost({
-        ...data,
-        username: account.address,
-      });
-
-      toast.success('Post created successfully!');
-      reset();
-      setPreview('');
-      onClose();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create post',
-      );
-    }
+    await handleCreatePost(
+      account ? { address: account.address } : null,
+      data,
+      tags,
+      reset,
+      setPreview,
+      setTags,
+      onClose
+    );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setValue('image', file);
-      setPreview(URL.createObjectURL(file));
-    }
+  // Handlers for file input and image removal
+  const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Call both the react-hook-form onChange and our custom handler.
+    register('image').onChange(e);
+    handleImageFileChange(e, setValue, setPreview);
   };
 
-  const handleRemoveImage = () => {
-    resetField('image');
-    setPreview('');
+  const onRemoveImage = () => {
+    removeImage(resetField, setPreview);
+  };
+
+  // Handlers for react-tag-input
+  const handleDelete = (index: number) => {
+    setTags(deleteTag(tags, index));
+  };
+
+  const handleAddition = (tag: Tag) => {
+    setTags(addTag(tags, tag));
+  };
+
+  const handleDrag = (tag: Tag, currPos: number, newPos: number) => {
+    setTags(dragTag(tags, tag, currPos, newPos));
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="mx-auto max-w-2xl p-6 w-full"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-2xl p-6 w-full">
         <h2 className="mb-6 text-xl text-yellow-500">create new post</h2>
         <div className="space-y-4">
           {preview ? (
@@ -84,7 +92,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               />
               <button
                 type="button"
-                onClick={handleRemoveImage}
+                onClick={onRemoveImage}
                 className="absolute bg-gray-900/80 hover:text-yellow-400 p-1 right-2 rounded-full text-yellow-500 top-2"
               >
                 <X className="h-5 w-5" />
@@ -98,10 +106,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   accept="image/*"
                   className="hidden"
                   {...register('image')}
-                  onChange={(e) => {
-                    register('image').onChange(e);
-                    handleImageChange(e);
-                  }}
+                  onChange={onImageChange}
                 />
                 <div className="space-y-2">
                   <Upload className="h-8 mx-auto text-yellow-500 w-8" />
@@ -130,11 +135,31 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             placeholder="Add a comment..."
             className="bg-gray-800 border border-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 px-3 placeholder-yellow-500/50 py-2 rounded-md text-yellow-500 w-full"
             rows={3}
-            {...register('comment')}
+            {...register('comments')}
           />
-          {errors.comment && (
-            <p className="text-red-500 text-sm">{errors.comment.message}</p>
+          {errors.comments && (
+            <p className="text-red-500 text-sm">{errors.comments.message}</p>
           )}
+
+          {/* React Tag Input */}
+          <div>
+            <label className="block text-yellow-500 mb-2">Add Tags (optional)</label>
+            <ReactTags
+              tags={tags.map((tag) => ({ ...tag, className: '' }))}
+              suggestions={[]}
+              separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
+              handleDelete={handleDelete}
+              handleAddition={(tag) => handleAddition({ id: tag.id, text: tag.id })}
+              handleDrag={(tag, currPos, newPos) => handleDrag({ id: tag.id, text: tag.id }, currPos, newPos)}
+              placeholder="Type and press enter..."
+              autoFocus={false}
+              inputFieldPosition="bottom"
+              allowUnique
+              allowAdditionFromPaste
+              editable
+              clearAll={false}
+            />
+          </div>
 
           <button
             type="submit"
