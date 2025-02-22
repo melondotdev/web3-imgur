@@ -17,7 +17,7 @@ export function Main() {
       ),
     );
   };
-
+  
   const handleComment = (postId: string, content: string) => {
     setPosts(
       posts.map((post) =>

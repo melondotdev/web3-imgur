@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const createPostFormSchema = z.object({
+  id: z.string().optional(),
   title: z
     .string()
     .min(1, 'Title is required')
@@ -17,12 +18,7 @@ export const createPostFormSchema = z.object({
     ),
   tags: z.array(z.string()).optional(),
   createdAt: z.string().optional(),
-  votes: z.number().optional(),
-  comments: z
-    .string()
-    .max(500, 'Comment must be less than 500 characters')
-    .optional()
-    .transform((val) => (val ? [val] : [])),
+  votes: z.number().optional()
 });
 
 export type CreatePostForm = z.infer<typeof createPostFormSchema>;

@@ -10,10 +10,6 @@ export async function createPost(
   formData.append('username', data.username);
   formData.append('image', data.image);
 
-  if (data.comment) {
-    formData.append('comment', data.comment);
-  }
-
   const response = await fetch('/api/post', {
     method: 'POST',
     body: formData,

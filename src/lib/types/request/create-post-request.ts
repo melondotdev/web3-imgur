@@ -17,17 +17,10 @@ const SUI_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{64}$/;
 
 // Schema for the create post request
 export const createPostSchema = z.object({
-  id: z.string().optional(),
   title: z
     .string()
     .min(1, 'Title is required')
     .max(100, 'Title must be less than 100 characters'),
-  // Rename to "comments" and transform into an array
-  comments: z
-    .string()
-    .max(500, 'Comment must be less than 500 characters')
-    .optional()
-    .transform((val) => (val ? [val] : [])),
   username: z
     .string()
     .regex(
@@ -52,12 +45,10 @@ export function validateCreatePostRequest(
   formData: FormData,
 ): CreatePostRequest {
   const data = {
-    id: formData.get('id'),
     title: formData.get('title'),
     username: formData.get('username'),
     image: formData.get('image'),
-    tags: formData.getAll('tags'), // if multiple tags are sent; otherwise, adjust accordingly
-    comments: formData.get('comments') || "", // using the new field name
+    tags: formData.getAll('tags')
   };
   
   return createPostSchema.parse(data);

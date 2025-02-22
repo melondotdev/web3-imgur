@@ -1,10 +1,7 @@
 import { uploadImageUsingTus } from '@/lib/tusky-database/tusky';
 import { validateCreatePostRequest } from '@/lib/types/request/create-post-request';
 import type { ApiError } from '@/lib/types/response/api-response';
-import type {
-  CreatePostResponse,
-  Post,
-} from '@/lib/types/response/create-post-response';
+import type { CreatePostResponse, Post } from '@/lib/types/response/create-post-response';
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { supabaseClient } from '@/lib/web2-database/supabase';
@@ -13,41 +10,45 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const validatedData = validateCreatePostRequest(formData);
-
-    // Get the file data
+    
+    // Get the file data.
     const file = formData.get('image') as File;
+    if (!file) {
+      return NextResponse.json(
+        { error: 'Image file is required' } as ApiError,
+        { status: 400 }
+      );
+    }
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Upload image to Tusky with buffer
+    
+    // Upload image to Tusky.
     const imageUrl = await uploadImageUsingTus({
       buffer,
       filename: file.name,
       mimetype: file.type,
       size: file.size,
     });
-
-    // Build the post object (note: comments will be inserted separately)
+    
+    // Build the post object.
     const post: Post = {
-      id: validatedData.id || crypto.randomUUID(), // Provide default UUID if id is undefined
       title: validatedData.title,
       username: validatedData.username,
       imageUrl,
       tags: validatedData.tags || [],
       createdAt: new Date().toISOString(),
       votes: 0,
-      comments: validatedData.comments, // will use for separate comment insertion
     };
 
     const supabase = supabaseClient();
 
-    // 1. Insert post data (without comments) into the "posts" table
+    // Insert post data into the "posts" table.
     const { data: postData, error: postError } = await supabase
       .from('posts')
       .insert({
         title: post.title,
         username: post.username,
         image_url: post.imageUrl,
-        tags: post.tags, // Assuming your column is of type array or JSON
+        tags: post.tags,
         created_at: post.createdAt,
         votes: post.votes,
       })
@@ -61,32 +62,18 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // 2. If a comment exists, insert it into the "comments" table
-    if (post.comments && post.comments.length > 0) {
-      const commentContent = post.comments[0]; // Use the first comment if available
-      const { error: commentError } = await supabase
-        .from('comments')
-        .insert({
-          post_id: postData.id,
-          author: post.username,
-          content: commentContent,
-          created_at: new Date().toISOString(),
-        });
-      if (commentError) {
-        console.error('Supabase comment insertion error:', commentError);
-        return NextResponse.json(
-          { error: 'Failed to insert comment into database' } as ApiError,
-          { status: 500 }
-        );
-      }
-    }
     
     const response: CreatePostResponse = {
       message: 'Post created successfully',
-      data: post,
+      data: postData,
     };
-
+    
+    // TO-DO: Comments are handled separately in a one-to-many relationship.
+    // For example, a separate API endpoint can handle inserting comments with a "post_id" column.
+    
+    // TO-DO: Tags are also handled in a many-to-many relationship.
+    // For example, a separate API endpoint can handle inserting tags with an array of "post_ids" in a separate column.
+    
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);
@@ -106,10 +93,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optional: Add size limit to the route
+// Optional: Add size limit to the route.
 export const config = {
   api: {
-    bodyParser: false, // Disable the default body parser
-    sizeLimit: '10mb', // Adjust as needed
+    bodyParser: false, // Disable default body parser to handle FormData.
+    sizeLimit: '10mb', // Adjust as needed.
   },
 };

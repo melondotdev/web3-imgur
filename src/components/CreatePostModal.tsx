@@ -1,13 +1,4 @@
-'use client';
 import { Modal } from '@/components/base/Modal';
-import {
-  handleCreatePost,
-  handleImageFileChange,
-  removeImage,
-  deleteTag,
-  addTag,
-  dragTag,
-} from '@/lib/web2-database/supabase';
 import {
   type CreatePostForm,
   createPostFormSchema,
@@ -19,6 +10,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { WithContext as ReactTags, SEPARATORS } from 'react-tag-input';
 import type { Tag } from '@/types';
+import { deleteTag, addTag, dragTag } from '@/lib/helpers/tagHelper';
+import { handleImageFileChange, removeImage } from '@/lib/helpers/imageHelper';
+import { createPost } from '@/lib/services/post-service';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -42,22 +36,33 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     resolver: zodResolver(createPostFormSchema),
   });
 
+  // Instead of using a direct fetch call here, we now call our service.
   const onSubmit = async (data: CreatePostForm) => {
-    await handleCreatePost(
-      account ? { address: account.address } : null,
-      data,
-      tags,
-      reset,
-      setPreview,
-      setTags,
-      onClose
-    );
+    try {
+      const file =
+        data.image instanceof FileList ? data.image[0] : (data.image as File);
+      // Build the payload expected by your service.
+      await createPost({
+        title: data.title,
+        username: account?.address || '',
+        image: file,
+      });
+      
+      // Reset form state and close the modal upon success.
+      reset();
+      setPreview('');
+      setTags([]);
+      onClose();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      // Optionally show an error notification here.
+    }
   };
 
-  // Handlers for file input and image removal
   const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Call both the react-hook-form onChange and our custom handler.
+    // Let react-hook-form capture the file input.
     register('image').onChange(e);
+    // Update preview and form value using your helper.
     handleImageFileChange(e, setValue, setPreview);
   };
 
@@ -65,7 +70,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     removeImage(resetField, setPreview);
   };
 
-  // Handlers for react-tag-input
+  // Handlers for react-tag-input.
   const handleDelete = (index: number) => {
     setTags(deleteTag(tags, index));
   };
@@ -80,7 +85,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-2xl p-6 w-full">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="mx-auto max-w-2xl p-6 w-full"
+      >
         <h2 className="mb-6 text-xl text-yellow-500">create new post</h2>
         <div className="space-y-4">
           {preview ? (
@@ -143,14 +151,20 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
           {/* React Tag Input */}
           <div>
-            <label className="block text-yellow-500 mb-2">Add Tags (optional)</label>
+            <label className="block text-yellow-500 mb-2">
+              Add Tags (optional)
+            </label>
             <ReactTags
               tags={tags.map((tag) => ({ ...tag, className: '' }))}
               suggestions={[]}
               separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
               handleDelete={handleDelete}
-              handleAddition={(tag) => handleAddition({ id: tag.id, text: tag.id })}
-              handleDrag={(tag, currPos, newPos) => handleDrag({ id: tag.id, text: tag.id }, currPos, newPos)}
+              handleAddition={(tag) =>
+                handleAddition({ id: tag.id, text: tag.id })
+              }
+              handleDrag={(tag, currPos, newPos) =>
+                handleDrag({ id: tag.id, text: tag.id }, currPos, newPos)
+              }
               placeholder="Type and press enter..."
               autoFocus={false}
               inputFieldPosition="bottom"
