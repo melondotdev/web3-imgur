@@ -48,7 +48,7 @@ export function validateCreatePostRequest(
     title: formData.get('title'),
     username: formData.get('username'),
     image: formData.get('image'),
-    tags: formData.getAll('tags')
+    tags: formData.getAll('tags'),
   };
   
   return createPostSchema.parse(data);

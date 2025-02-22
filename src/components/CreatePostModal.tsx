@@ -46,7 +46,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         title: data.title,
         username: account?.address || '',
         image: file,
-        tags: tags.map((tag) => tag.text),
+        tags: tags.map((tag) => tag.text)
       });
       
       // Reset form state and close the modal upon success.
@@ -70,7 +70,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const onRemoveImage = () => {
     removeImage(resetField, setPreview);
   };
-
+  
   // Handlers for react-tag-input.
   const handleDelete = (index: number) => {
     setTags(deleteTag(tags, index));
@@ -132,7 +132,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
           <input
             type="text"
-            placeholder="Add a title..."
+            placeholder="add the first comment..."
             className="bg-gray-800 border border-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 px-3 placeholder-yellow-500/50 py-2 rounded-md text-yellow-500 w-full"
             {...register('title')}
           />
@@ -140,20 +140,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             <p className="text-red-500 text-sm">{errors.title.message}</p>
           )}
 
-          <textarea
-            placeholder="Add a comment..."
-            className="bg-gray-800 border border-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 px-3 placeholder-yellow-500/50 py-2 rounded-md text-yellow-500 w-full"
-            rows={3}
-            {...register('comments')}
-          />
-          {errors.comments && (
-            <p className="text-red-500 text-sm">{errors.comments.message}</p>
-          )}
-
           {/* React Tag Input */}
           <div>
             <label className="block text-yellow-500 mb-2">
-              Add Tags (optional)
+              add tags (optional)
             </label>
             <ReactTags
               tags={tags.map((tag) => ({ ...tag, className: '' }))}
@@ -166,7 +156,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               handleDrag={(tag, currPos, newPos) =>
                 handleDrag({ id: tag.id, text: tag.id }, currPos, newPos)
               }
-              placeholder="Type and press enter..."
+              placeholder="type and press enter..."
               autoFocus={false}
               inputFieldPosition="bottom"
               allowUnique
@@ -175,14 +165,14 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               clearAll={false}
             />
           </div>
-
+          
           <button
             type="submit"
             disabled={isSubmitting || !account}
             className="bg-yellow-500/20 flex hover:bg-yellow-500/30 items-center justify-center px-4 py-2 rounded-md space-x-2 text-yellow-500 w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="h-5 w-5" />
-            <span>{isSubmitting ? 'Sharing...' : 'Share'}</span>
+            <span>{isSubmitting ? 'sharing...' : 'share'}</span>
           </button>
         </div>
       </form>

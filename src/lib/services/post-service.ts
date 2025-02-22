@@ -1,6 +1,6 @@
 import type { CreatePostRequest } from '@/lib/types/request/create-post-request';
-import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
+import type { ApiError } from '@/lib/types/response/api-response';
 
 export async function createPost(
   data: CreatePostRequest,

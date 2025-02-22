@@ -2,6 +2,7 @@ import { uploadImageUsingTus } from '@/lib/tusky-database/tusky';
 import { validateCreatePostRequest } from '@/lib/types/request/create-post-request';
 import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreatePostResponse, Post } from '@/lib/types/response/create-post-response';
+import type { Comment } from '@/lib/types/response/create-comment-response';
 import { NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { supabaseClient } from '@/lib/web2-database/supabase';
@@ -29,13 +30,15 @@ export async function POST(request: NextRequest) {
       size: file.size,
     });
     
+    const createdAt = new Date().toISOString();
+
     // Build the post object.
     const post: Post = {
       title: validatedData.title,
       username: validatedData.username,
       imageUrl,
       tags: validatedData.tags || [],
-      createdAt: new Date().toISOString(),
+      createdAt: createdAt,
       votes: 0,
     };
     
@@ -63,11 +66,40 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const response: CreatePostResponse = {
-      message: 'Post created successfully' + JSON.stringify(postData, null, 2),
-      data: postData,
+    // Build the comment object.
+    const comment: Comment = {
+      content: validatedData.title,
+      author: validatedData.username,
+      createdAt: createdAt,
+      votes: 0,
     };
     
+    // Insert comment data into the "comments" table.
+    const { data: commentData, error: commentError } = await supabase
+      .from('comments')
+      .insert({
+        post_id: postData.id,
+        content: comment.content,
+        author: comment.author,
+        created_at: comment.createdAt,
+        votes: comment.votes,
+      })
+      .select('*')
+      .single();
+
+    if (commentError) {
+      console.error('Supabase comment insertion error:', commentError);
+      return NextResponse.json(
+        { error: 'Failed to insert comment into database' } as ApiError,
+        { status: 500 }
+      );
+    }
+    
+    const response: CreatePostResponse = {
+      message: 'Post and comment created successfully' + JSON.stringify(postData, null, 2) + JSON.stringify(commentData, null, 2),
+      data: commentData,
+    };
+
     // TO-DO: Comments are handled separately in a one-to-many relationship.
     // For example, a separate API endpoint can handle inserting comments with a "post_id" column.
     
@@ -85,7 +117,7 @@ export async function POST(request: NextRequest) {
       };
       return NextResponse.json(apiError, { status: 400 });
     }
-
+    
     return NextResponse.json(
       { error: 'Failed to create post' } as ApiError,
       { status: 500 }
