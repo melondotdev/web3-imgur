@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
       votes: 0,
     };
-
+    
     const supabase = supabaseClient();
 
     // Insert post data into the "posts" table.
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
     
     const response: CreatePostResponse = {
-      message: 'Post created successfully',
+      message: 'Post created successfully' + JSON.stringify(postData, null, 2),
       data: postData,
     };
     

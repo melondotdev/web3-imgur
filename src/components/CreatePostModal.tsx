@@ -46,6 +46,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         title: data.title,
         username: account?.address || '',
         image: file,
+        tags: tags.map((tag) => tag.text),
       });
       
       // Reset form state and close the modal upon success.

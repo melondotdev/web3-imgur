@@ -9,7 +9,8 @@ export async function createPost(
   formData.append('title', data.title);
   formData.append('username', data.username);
   formData.append('image', data.image);
-
+  formData.append('tags', JSON.stringify(data.tags));
+  
   const response = await fetch('/api/post', {
     method: 'POST',
     body: formData,
