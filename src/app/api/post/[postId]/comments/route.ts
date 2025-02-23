@@ -21,7 +21,7 @@ export async function POST(
       author: validatedData.username,
       content: validatedData.text,
     });
-
+    
     return NextResponse.json(
       {
         comment: {
