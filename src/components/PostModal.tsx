@@ -1,4 +1,4 @@
-import { Modal } from '@/components/base/Modal';
+import { Modal } from '@/components/modals/Modal';
 import type { Post } from '@/lib/types/response/create-post-response';
 import { ConnectButton, useWallet } from '@suiet/wallet-kit';
 import { ArrowBigUp, Send } from 'lucide-react';
