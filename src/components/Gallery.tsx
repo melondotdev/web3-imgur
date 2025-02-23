@@ -8,8 +8,11 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
+import { createComment } from '@/lib/services/comment-service';
+import { useWallet } from '@suiet/wallet-kit';
 
 export function Gallery() {
+  const wallet = useWallet();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -61,10 +64,21 @@ export function Gallery() {
   const handleVote = (postId: string) => {
     console.log('Voting for post:', postId);
   };
-
-  const handleComment = (postId: string, content: string, signature: string) => {
-    // TODO: Implement comment submission
-    console.log('New comment:', { postId, content, signature });
+  
+  const handleComment = async (postId: string, content: string, signature: string) => {
+    try {
+      await createComment(postId, {
+        username: wallet.account?.address || 'unknown',
+        text: content,
+      });
+      
+      // Refresh comments after posting
+      const updatedComments = await getComments(postId);
+      setComments(updatedComments);
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+      toast.error('Failed to post comment');
+    }
   };
 
   return (

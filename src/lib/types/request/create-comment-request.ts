@@ -14,12 +14,10 @@ export type CreateCommentRequest = z.infer<typeof createCommentSchema>;
 
 // Helper function to validate the request
 export function validateCreateCommentRequest(
-  formData: FormData,
+  data: any
 ): CreateCommentRequest {
-  const data = {
-    text: formData.get('comment'),
-    username: formData.get('username'),
-  };
-
-  return createCommentSchema.parse(data);
+  return createCommentSchema.parse({
+    text: data.content,
+    username: data.author,
+  });
 }

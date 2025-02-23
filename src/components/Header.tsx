@@ -9,7 +9,7 @@ export function Header() {
   const wallet = useWallet();
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
+  
   return (
     <>
       <header className="bg-gray-900 border-b border-yellow-500/20">

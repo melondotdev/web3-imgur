@@ -1,7 +1,11 @@
+'use client';
 import { Header } from '@/components/Header';
 import type { PropsWithChildren } from 'react';
+import { useWallet } from '@suiet/wallet-kit';
 
 export function MainLayout({ children }: PropsWithChildren) {
+  const wallet = useWallet();
+  
   return (
     <div className="min-h-screen bg-black">
       <Header />

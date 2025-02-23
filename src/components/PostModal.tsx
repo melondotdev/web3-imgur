@@ -24,7 +24,7 @@ export function PostModal({
   const [newComment, setNewComment] = useState('');
   const wallet = useWallet();
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
-
+  
   // Update localComments when comments prop changes
   useEffect(() => {
     setLocalComments(comments);
