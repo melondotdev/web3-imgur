@@ -38,7 +38,7 @@ export const createPostSchema = z.object({
       (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
       'Only .jpg, .jpeg, .png, .webp and .gif formats are supported',
     ),
-  tags: z.string().transform(parseTags).pipe(z.array(z.string())).optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 // Infer the type from the schema
@@ -48,11 +48,15 @@ export type CreatePostRequest = z.infer<typeof createPostSchema>;
 export function validateCreatePostRequest(
   formData: FormData,
 ): CreatePostRequest {
+  const tagsValue = formData.get('tags');
+  // Parse tags from FormData - it comes as a string that needs to be parsed as JSON
+  const tags = tagsValue ? JSON.parse(tagsValue as string) : [];
+
   const data = {
     title: formData.get('title'),
     username: formData.get('username'),
     image: formData.get('image'),
-    tags: formData.get('tags'),
+    tags: tags,
   };
 
   return createPostSchema.parse(data);

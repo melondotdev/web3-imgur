@@ -6,6 +6,7 @@ import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
       tags: validatedData.tags || [],
     });
 
+    // Create tags and associate them with the post
+    const tags = await createTagsIfNotExist(validatedData.tags || []);
+    
     const response: CreatePostResponse = {
       message: 'Post created successfully',
       data: {
@@ -50,11 +54,11 @@ export async function POST(request: NextRequest) {
         title: post.title,
         createdAt: post.created_at,
         imageUrl,
-        tags: [],
+        tags: tags.map(tag => tag.name), // Map tag objects to tag names
         votes: 0,
       },
     };
-
+    
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);

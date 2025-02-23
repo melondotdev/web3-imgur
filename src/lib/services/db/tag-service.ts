@@ -18,7 +18,7 @@ export async function getAllTags(): Promise<Record<string, DbTag>> {
   );
 }
 
-export async function createTag(name: string): Promise<DbTag> {
+export async function createPostTag(name: string): Promise<DbTag> {
   // First check if tag already exists
   const { data: existingTag } = await supabaseClient()
     .from('tags')
@@ -55,7 +55,7 @@ export async function createTagsIfNotExist(
   const tags: DbTag[] = [];
 
   for (const name of uniqueNames) {
-    const tag = await createTag(name);
+    const tag = await createPostTag(name);
     tags.push(tag);
   }
 

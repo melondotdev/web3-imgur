@@ -44,13 +44,16 @@ export function CreatePostModal({
       const file =
         data.image instanceof FileList ? data.image[0] : (data.image as File);
 
-      await createPost({
-        title: data.title,
-        username: data.username,
-        image: file,
-        tags: data.tags,
-      });
+      // Create FormData and append fields
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('username', data.username);
+      formData.append('image', file);
+      // Stringify the tags array before appending
+      formData.append('tags', JSON.stringify(tags.map(tag => tag.text)));
 
+      await createPost(formData);
+      
       reset();
       setPreview('');
       setTags([]);
@@ -74,24 +77,27 @@ export function CreatePostModal({
     resetField('image');
     setPreview('');
   };
-  useEffect(() => {
-    setValue('tags', tags.map((tag) => tag.id));
-  }, [tags, setValue]);
 
+  useEffect(() => {
+    // For debugging
+    console.log('Setting tags:', tags.map(tag => tag.text));
+    setValue('tags', tags.map(tag => tag.text), { shouldValidate: true });
+  }, [tags, setValue]);
+  
   useEffect(() => {
     if (isOpen) {
       setValue('username', walletAddress);
     }
   }, [walletAddress, setValue, isOpen]);
-
+  
   const handleDelete = (index: number) => {
     setTags((prev) => prev.filter((_, i) => i !== index));
   };
-
+  
   const handleAddition = (tag: Tag) => {
-    setTags((prev) => prev.concat(tag));
+    setTags((prev) => [...prev, { id: tag.text, text: tag.text, className: '' }]);
   };
-
+  
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form
@@ -152,7 +158,6 @@ export function CreatePostModal({
           <div>
             <label className="block text-yellow-500 mb-2">
               add tags (optional)
-              <input type="text" className="hidden" {...register('tags')} />
               <ReactTags
                 tags={tags}
                 // TODO: Add suggestions
