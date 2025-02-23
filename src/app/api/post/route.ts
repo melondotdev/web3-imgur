@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     
     // Build the comment object.
     const comment: Comment = {
-      content: validatedData.title,
+      comment: validatedData.title,
       author: validatedData.username,
       createdAt: createdAt,
       votes: 0,
@@ -79,14 +79,14 @@ export async function POST(request: NextRequest) {
       .from('comments')
       .insert({
         post_id: postData.id,
-        content: comment.content,
+        content: comment.comment,
         author: comment.author,
         created_at: comment.createdAt,
         votes: comment.votes,
       })
       .select('*')
       .single();
-
+    
     if (commentError) {
       console.error('Supabase comment insertion error:', commentError);
       return NextResponse.json(

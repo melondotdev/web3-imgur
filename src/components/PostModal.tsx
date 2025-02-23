@@ -9,16 +9,16 @@ interface Comment {
   author: string;
   content: string;
   createdAt: string;
-  signature?: string;
+  signature: string;
 }
 
 interface PostModalProps {
-  post: Post & { comments?: Comment[] }; // Adjusted type to allow optional comments array
+  post: Post & { comments?: Comment[] };
   isOpen: boolean;
   onClose: () => void;
   onVote: (id: string) => void;
   // Optional callback to persist the comment server-side.
-  onComment?: (id: string, content: string, signature: string) => void;
+  onComment?: (postId: string, content: string, signature: string) => void;
 }
 
 export function PostModal({
@@ -41,29 +41,25 @@ export function PostModal({
     const trimmed = newComment.trim();
     if (trimmed && wallet.connected) {
       try {
-        // Convert the comment into bytes.
-        const msgBytes = new TextEncoder().encode(trimmed);
-        // Sign the message using the connected wallet.
-        const result = await wallet.signPersonalMessage({ message: msgBytes });
-
-        // Build a transient comment object.
+        // Instead of signing the comment, we set the signature equal to the author's address.
+        const author = wallet.account?.address || 'unknown';
         const newCommentObj: Comment = {
           id: Date.now().toString(), // Use a timestamp as a simple unique ID.
-          author: wallet.account?.address || 'unknown',
+          author,
           content: trimmed,
           createdAt: new Date().toISOString(),
-          signature: result.signature,
+          signature: author, // Signature is set equal to author.
         };
 
         // Optionally pass the comment to an external callback for server-side persistence.
         if (onComment) {
-          onComment(post.id, trimmed, result.signature);
+          onComment(post.id, trimmed, author);
         }
         // Update the UI immediately.
         setLocalComments((prev) => [...prev, newCommentObj]);
         setNewComment('');
       } catch (error) {
-        console.error('Error signing comment:', error);
+        console.error('Error submitting comment:', error);
       }
     }
   }
@@ -80,7 +76,6 @@ export function PostModal({
         </div>
         <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
           <div className="flex items-center justify-between mb-4">
-            {/* Updated to use post.username instead of post.author */}
             <span className="text-yellow-500/80">@{post.username}</span>
             <button
               onClick={() => onVote(post.id)}
@@ -126,7 +121,6 @@ export function PostModal({
             </div>
           </form>
 
-          {/* If wallet is not connected, show the connect button */}
           {!wallet.connected && (
             <div className="mt-4">
               <ConnectButton />

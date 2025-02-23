@@ -9,7 +9,7 @@ export const createCommentSchema = z.object({
     .string()
     .min(1, 'Comment is required')
     .max(100, 'Comment must be less than 100 characters'),
-  username: z
+  author: z
     .string()
     .regex(
       SUI_ADDRESS_PATTERN,
@@ -25,10 +25,8 @@ export function validateCreateCommentRequest(
   formData: FormData,
 ): CreateCommentRequest {
   const data = {
-    title: formData.get('title'),
-    username: formData.get('username'),
-    image: formData.get('image'),
-    tags: formData.getAll('tags')
+    comment: formData.get('comment'),
+    author: formData.get('author')
   };
   
   return createCommentSchema.parse(data);
