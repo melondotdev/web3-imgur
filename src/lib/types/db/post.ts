@@ -5,8 +5,9 @@ export const dbPostSchema = z.object({
   username: z.string(),
   title: z.string(),
   created_at: z.string().datetime(),
-  image_id: z.string(),
-  vault_id: z.string(),
+  image_id: z.string().uuid(),
+  vault_id: z.string().uuid(),
+  votes: z.number().default(0),
 });
 
 export const dbPostCommentSchema = z.object({
@@ -15,6 +16,7 @@ export const dbPostCommentSchema = z.object({
   text: z.string(),
   post_id: z.string().uuid(),
   author: z.string(),
+  votes: z.number().default(0),
 });
 
 export const dbPostTagSchema = z.object({

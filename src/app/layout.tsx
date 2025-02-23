@@ -3,7 +3,11 @@ import './globals.css';
 import { SuiProvider } from '@/components/providers/SuiProvider';
 import { Toaster } from 'react-hot-toast';
 import '@suiet/wallet-kit/style.css';
+import { getClientEnv } from '@/lib/config/client-env';
 import type { PropsWithChildren } from 'react';
+
+// This will throw if env vars are missing
+getClientEnv();
 
 export const metadata: Metadata = {
   title: 'meme.fun',

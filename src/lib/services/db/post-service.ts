@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { supabaseClient, supabasePublicClient } from '@/lib/config/supabase';
 import { createPostTags } from '@/lib/services/db/post-tags-service';
 import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
 import type { DbPost } from '@/lib/types/db/post';
@@ -13,7 +13,7 @@ type CreatePostParams = {
 
 export async function createPost(params: CreatePostParams): Promise<DbPost> {
   // Start a Supabase transaction
-  const { data: post, error: postError } = await supabaseAdmin
+  const { data: post, error: postError } = await supabaseClient()
     .from('posts')
     .insert({
       username: params.author,
@@ -52,7 +52,7 @@ export async function createPost(params: CreatePostParams): Promise<DbPost> {
 }
 
 export async function getPostWithTags(postId: string): Promise<DbPost> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabasePublicClient()
     .from('posts')
     .select(`
       *,

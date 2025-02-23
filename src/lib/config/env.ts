@@ -20,7 +20,7 @@ const publicEnvSchema = z.object({
 export function getEnv() {
   // Parse and validate environment variables
   const envParse = envSchema.safeParse(process.env);
-  
+
   if (!envParse.success) {
     console.error(
       '❌ Invalid environment variables:',
@@ -32,8 +32,13 @@ export function getEnv() {
 }
 
 export function getPublicEnv() {
+  console.log('process.env', process.env);
   const envParse = publicEnvSchema.safeParse(process.env);
   if (!envParse.success) {
+    console.error(
+      '❌ Invalid environment variables:',
+      envParse.error.flatten().fieldErrors,
+    );
     throw new Error('Invalid public environment variables');
   }
   return envParse.data;

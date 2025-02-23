@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Extract image ID from URL
-    console.log('imageUrl', imageUrl);
     const imageId = imageUrl
       .split('files/')[1] // Get everything after 'files/'
       .split('/data')[0]; // Remove '/data' from the end

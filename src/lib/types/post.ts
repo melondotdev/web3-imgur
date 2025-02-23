@@ -15,7 +15,6 @@ export const postSchema = z.object({
   createdAt: z.string().datetime(),
   imageUrl: z.string().url(),
   tags: z.array(z.string()),
-  comments: z.array(commentSchema),
 });
 
 export type Comment = z.infer<typeof commentSchema>;

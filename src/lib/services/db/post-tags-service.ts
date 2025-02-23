@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '@/lib/config/supabase-admin';
-import type { DbPostTag } from '@/lib/types/db/post';
+import { supabaseClient, supabasePublicClient } from '@/lib/config/supabase';
+import type { DbPostTag, DbTag } from '@/lib/types/db/post';
 
 type CreatePostTagParams = {
   postId: string;
@@ -9,7 +9,7 @@ type CreatePostTagParams = {
 export async function createPostTag(
   params: CreatePostTagParams,
 ): Promise<DbPostTag> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseClient()
     .from('post_tags')
     .insert({
       post_id: params.postId,
@@ -44,7 +44,7 @@ export async function createPostTags(
 }
 
 export async function getPostTags(postId: string): Promise<DbPostTag[]> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabasePublicClient()
     .from('post_tags')
     .select('*')
     .eq('post_id', postId);
@@ -57,7 +57,7 @@ export async function getPostTags(postId: string): Promise<DbPostTag[]> {
 }
 
 export async function deletePostTags(postId: string): Promise<void> {
-  const { error } = await supabaseAdmin
+  const { error } = await supabaseClient()
     .from('post_tags')
     .delete()
     .eq('post_id', postId);
@@ -65,4 +65,29 @@ export async function deletePostTags(postId: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete post tags: ${error.message}`);
   }
+}
+
+export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
+  const { data, error } = await supabasePublicClient()
+    .from('post_tags')
+    .select(`
+      post_id,
+      tag:tags (*)
+    `);
+
+  if (error) {
+    throw new Error(`Failed to fetch post tags: ${error.message}`);
+  }
+
+  // Group tags by post_id
+  return data.reduce(
+    (acc, { post_id, tag }) => {
+      if (!acc[post_id]) {
+        acc[post_id] = [];
+      }
+      acc[post_id].push(tag);
+      return acc;
+    },
+    {} as Record<string, DbTag[]>,
+  );
 }
