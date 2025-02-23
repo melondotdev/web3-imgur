@@ -6,11 +6,12 @@ import type { Post } from '@/lib/types/post';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { PostCard } from './PostCard';
+import { PostModal } from './PostModal';
 
 export function Gallery() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   useEffect(() => {
     // Initial load
     getAllPosts()
@@ -38,10 +39,19 @@ export function Gallery() {
   }
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} onClick={setSelectedPost} />
+        ))}
+      </div>
+      {/* FIXME */}
+      <PostModal
+        post={selectedPost}
+        comments={[]}
+        isOpen={!!selectedPost}
+        onClose={() => setSelectedPost(null)}
+      />
+    </>
   );
 }

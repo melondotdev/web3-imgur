@@ -1,23 +1,19 @@
+import type { Post } from '@/lib/types';
 import { ArrowBigUp, MessageCircle } from 'lucide-react';
-import { Post } from '../types';
 
 interface PostCardProps {
   post: Post;
   onVote: (id: string) => void;
-  onClick: () => void;
+  onClick: (post: Post) => void;
 }
 
 export function PostCard({ post, onVote, onClick }: PostCardProps) {
   return (
-    <div 
+    <div
       className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02]"
-      onClick={onClick}
+      onClick={() => onClick(post)}
     >
-      <img 
-        src={post.imageUrl} 
-        alt="user content"
-        className="w-full h-auto"
-      />
+      <img src={post.imageUrl} alt="user content" className="w-full h-auto" />
       <div className="p-4">
         <div className="flex items-center justify-between">
           {/* Changed post.author to post.username */}
