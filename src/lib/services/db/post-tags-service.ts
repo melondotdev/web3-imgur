@@ -17,7 +17,7 @@ export async function createPostTag(
     })
     .select()
     .single();
-
+  
   if (error) {
     throw new Error(`Failed to create post tag: ${error.message}`);
   }
@@ -85,7 +85,7 @@ export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
       if (!acc[post_id]) {
         acc[post_id] = [];
       }
-      acc[post_id].push(tag);
+      acc[post_id].push(tag as any);
       return acc;
     },
     {} as Record<string, DbTag[]>,

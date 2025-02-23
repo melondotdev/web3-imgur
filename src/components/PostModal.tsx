@@ -1,16 +1,8 @@
 import { Modal } from '@/components/base/Modal';
-import type { Post } from '@/lib/types/post';
+import type { Post, Comment } from '@/lib/types/post';
 import { ConnectButton, useWallet } from '@suiet/wallet-kit';
 import { ArrowBigUp, Send } from 'lucide-react';
-import { useState } from 'react';
-
-interface Comment {
-  id: string;
-  author: string;
-  content: string;
-  createdAt: string;
-  signature?: string;
-}
+import { useEffect, useState } from 'react';
 
 interface PostModalProps {
   post: Post;
@@ -33,6 +25,11 @@ export function PostModal({
   const wallet = useWallet();
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
 
+  // Update localComments when comments prop changes
+  useEffect(() => {
+    setLocalComments(comments);
+  }, [comments]);
+  
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
@@ -49,7 +46,7 @@ export function PostModal({
           author: wallet.account?.address || 'unknown',
           content: trimmed,
           createdAt: new Date().toISOString(),
-          signature: result.signature,
+          votes: 0
         };
 
         // Optionally pass the comment to an external callback for server-side persistence.
@@ -105,6 +102,10 @@ export function PostModal({
                     </span>
                   </div>
                   <p className="text-yellow-500/90">{comment.content}</p>
+                  <div className="flex items-center mt-2 text-yellow-500/50">
+                    <ArrowBigUp className="w-4 h-4 mr-1" />
+                    <span>{comment.votes}</span>
+                  </div>
                 </div>
               ))}
             </div>

@@ -140,7 +140,7 @@ export function CreatePostModal({
 
           <input
             type="text"
-            placeholder="Title"
+            placeholder="title"
             className="bg-gray-800 border border-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 px-3 placeholder-yellow-500/50 py-2 rounded-md text-yellow-500 w-full"
             {...register('title')}
           />

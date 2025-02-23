@@ -2,7 +2,8 @@ import {
   getAllPosts,
   subscribeToAllPosts,
 } from '@/lib/services/db/get-all-posts';
-import type { Post } from '@/lib/types/post';
+import { getComments } from '@/lib/services/db/get-comments';
+import type { Post, Comment } from '@/lib/types/post';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { PostCard } from './PostCard';
@@ -12,6 +13,8 @@ export function Gallery() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  
   useEffect(() => {
     // Initial load
     getAllPosts()
@@ -21,7 +24,7 @@ export function Gallery() {
         toast.error('Failed to load posts');
       })
       .finally(() => setLoading(false));
-
+    
     // Subscribe to changes
     const unsubscribe = subscribeToAllPosts(
       (updatedPosts) => setPosts(updatedPosts),
@@ -34,12 +37,34 @@ export function Gallery() {
     return unsubscribe;
   }, []);
 
+  // Load comments when a post is selected
+  useEffect(() => {
+    if (selectedPost) {
+      getComments(selectedPost.id)
+        .then((fetchedComments) => {
+          setComments(fetchedComments);
+          console.log(fetchedComments);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch comments:', error);
+          toast.error('Failed to load comments');
+        });
+    } else {
+      setComments([]);
+    }
+  }, [selectedPost]);
+  
   if (loading) {
     return <div>Loading...</div>;
   }
 
   const handleVote = (postId: string) => {
     console.log('Voting for post:', postId);
+  };
+
+  const handleComment = (postId: string, content: string, signature: string) => {
+    // TODO: Implement comment submission
+    console.log('New comment:', { postId, content, signature });
   };
 
   return (
@@ -54,13 +79,16 @@ export function Gallery() {
           />
         ))}
       </div>
-      <PostModal
-        post={selectedPost!}
-        onVote={handleVote}
-        comments={[]}
-        isOpen={!!selectedPost}
-        onClose={() => setSelectedPost(null)}
-      />
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onVote={handleVote}
+          comments={comments}
+          isOpen={true}
+          onClose={() => setSelectedPost(null)}
+          onComment={handleComment}
+        />
+      )}
     </>
   );
 }

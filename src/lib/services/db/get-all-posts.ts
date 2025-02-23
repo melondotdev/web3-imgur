@@ -10,7 +10,7 @@ export async function getAllPosts(): Promise<Post[]> {
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false });
-
+  
   if (postsError) {
     throw new Error(`Failed to fetch posts: ${postsError.message}`);
   }

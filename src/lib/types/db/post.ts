@@ -13,7 +13,7 @@ export const dbPostSchema = z.object({
 export const dbPostCommentSchema = z.object({
   id: z.string().uuid(),
   created_at: z.string().datetime(),
-  text: z.string(),
+  content: z.string(),
   post_id: z.string().uuid(),
   author: z.string(),
   votes: z.number().default(0),
