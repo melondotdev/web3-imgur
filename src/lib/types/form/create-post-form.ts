@@ -18,11 +18,6 @@ export const createPostFormSchema = z.object({
   tags: z.array(z.string()).optional(),
   createdAt: z.string().optional(),
   votes: z.number().optional(),
-  comments: z
-    .string()
-    .max(500, 'Comment must be less than 500 characters')
-    .optional()
-    .transform((val) => (val ? [val] : [])),
 });
 
 export type CreatePostForm = z.infer<typeof createPostFormSchema>;
