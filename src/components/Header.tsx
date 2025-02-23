@@ -10,11 +10,6 @@ export function Header() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // TODO: Imo it shouldn't be there but for now it'll do
-  const handleCreatePost = (imageUrl: string, comment: string) => {
-    console.log(imageUrl, comment);
-  };
-
   return (
     <>
       <header className="bg-gray-900 border-b border-yellow-500/20">

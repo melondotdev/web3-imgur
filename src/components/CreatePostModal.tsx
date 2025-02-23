@@ -1,18 +1,17 @@
 import { Modal } from '@/components/base/Modal';
-import {
-  type CreatePostForm,
-  createPostFormSchema,
-} from '@/lib/types/form/create-post-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useWallet } from '@suiet/wallet-kit';
-import { Upload, X } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { WithContext as ReactTags, SEPARATORS } from 'react-tag-input';
-import type { Tag } from '@/types';
-import { deleteTag, addTag, dragTag } from '@/lib/helpers/tagHelper';
-import { handleImageFileChange, removeImage } from '@/lib/helpers/imageHelper';
 import { createPost } from '@/lib/services/post-service';
+import type { CreatePostForm } from '@/lib/types/form/create-post-form';
+import { createPostSchema } from '@/lib/types/request/create-post-request';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Upload, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
+import {
+  WithContext as ReactTags,
+  SEPARATORS,
+  type Tag,
+} from 'react-tag-input';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -20,9 +19,12 @@ interface CreatePostModalProps {
   walletAddress: string;
 }
 
-export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
+export function CreatePostModal({
+  isOpen,
+  onClose,
+  walletAddress,
+}: CreatePostModalProps) {
   const [preview, setPreview] = useState('');
-  const { account } = useWallet();
   const [tags, setTags] = useState<Tag[]>([]);
 
   const {
@@ -30,65 +32,72 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     handleSubmit,
     setValue,
     resetField,
+    setError,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<CreatePostForm>({
-    resolver: zodResolver(createPostFormSchema),
+    resolver: zodResolver(createPostSchema),
   });
 
-  // Instead of using a direct fetch call here, we now call our service.
   const onSubmit = async (data: CreatePostForm) => {
     try {
       const file =
         data.image instanceof FileList ? data.image[0] : (data.image as File);
-      // Build the payload expected by your service.
+
       await createPost({
         title: data.title,
-        username: account?.address || '',
+        username: data.username,
         image: file,
-        tags: tags.map((tag) => tag.text)
+        tags: data.tags,
       });
-      
-      // Reset form state and close the modal upon success.
+
       reset();
       setPreview('');
       setTags([]);
       onClose();
     } catch (error) {
-      console.error('Error creating post:', error);
-      // Optionally show an error notification here.
+      toast.error(`Error creating post: ${JSON.stringify(error)}`);
     }
   };
 
   const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Let react-hook-form capture the file input.
-    register('image').onChange(e);
-    // Update preview and form value using your helper.
-    handleImageFileChange(e, setValue, setPreview);
+    const file = e.target.files?.[0];
+    if (file) {
+      setValue('image', file, { shouldValidate: true });
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setError('image', { message: 'Image is required' });
+    }
   };
 
   const onRemoveImage = () => {
-    removeImage(resetField, setPreview);
+    resetField('image');
+    setPreview('');
   };
-  
-  // Handlers for react-tag-input.
+
+  useEffect(() => {
+    setValue('tags', tags.map((tag) => tag.id).join(','));
+  }, [tags, setValue]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setValue('username', walletAddress);
+    }
+  }, [walletAddress, setValue, isOpen]);
+
   const handleDelete = (index: number) => {
-    setTags(deleteTag(tags, index));
+    setTags((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddition = (tag: Tag) => {
-    setTags(addTag(tags, tag));
-  };
-
-  const handleDrag = (tag: Tag, currPos: number, newPos: number) => {
-    setTags(dragTag(tags, tag, currPos, newPos));
+    setTags((prev) => prev.concat(tag));
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="mx-auto max-w-2xl p-6 w-full"
+        className="mx-auto p-6 w-full max-w-2xl"
       >
         <h2 className="mb-6 text-xl text-yellow-500">create new post</h2>
         <div className="space-y-4">
@@ -97,7 +106,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               <img
                 src={preview}
                 alt="preview"
-                className="h-64 object-cover rounded-lg w-full"
+                className="h-64 rounded-lg object-cover w-full"
               />
               <button
                 type="button"
@@ -132,7 +141,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
           <input
             type="text"
-            placeholder="add the first comment..."
+            placeholder="Title"
             className="bg-gray-800 border border-yellow-500/20 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 px-3 placeholder-yellow-500/50 py-2 rounded-md text-yellow-500 w-full"
             {...register('title')}
           />
@@ -144,32 +153,35 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           <div>
             <label className="block text-yellow-500 mb-2">
               add tags (optional)
+              <input type="text" className="hidden" {...register('tags')} />
+              <ReactTags
+                tags={tags}
+                // TODO: Add suggestions
+                suggestions={[]}
+                allowDragDrop={false}
+                separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
+                handleDelete={handleDelete}
+                handleAddition={handleAddition}
+                placeholder="type and press enter..."
+                autoFocus={false}
+                inputFieldPosition="bottom"
+                allowUnique={true}
+                allowAdditionFromPaste={true}
+                editable={true}
+                clearAll={false}
+              />
+              {errors.tags && (
+                <p className="mt-2 text-red-500 text-sm">
+                  {errors.tags.message}
+                </p>
+              )}
             </label>
-            <ReactTags
-              tags={tags.map((tag) => ({ ...tag, className: '' }))}
-              suggestions={[]}
-              separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
-              handleDelete={handleDelete}
-              handleAddition={(tag) =>
-                handleAddition({ id: tag.id, text: tag.id })
-              }
-              handleDrag={(tag, currPos, newPos) =>
-                handleDrag({ id: tag.id, text: tag.id }, currPos, newPos)
-              }
-              placeholder="type and press enter..."
-              autoFocus={false}
-              inputFieldPosition="bottom"
-              allowUnique
-              allowAdditionFromPaste
-              editable
-              clearAll={false}
-            />
           </div>
-          
+
           <button
             type="submit"
-            disabled={isSubmitting || !account}
-            className="bg-yellow-500/20 flex hover:bg-yellow-500/30 items-center justify-center px-4 py-2 rounded-md space-x-2 text-yellow-500 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSubmitting}
+            className="bg-yellow-500/20 disabled:cursor-not-allowed disabled:opacity-50 flex hover:bg-yellow-500/30 items-center justify-center px-4 py-2 rounded-md space-x-2 text-yellow-500 w-full"
           >
             <Upload className="h-5 w-5" />
             <span>{isSubmitting ? 'sharing...' : 'share'}</span>

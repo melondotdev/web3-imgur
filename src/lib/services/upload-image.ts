@@ -8,13 +8,7 @@ type UploadInput = {
   size: number;
 };
 
-function encodeMetadata(metadata: Record<string, string>): string {
-  return Object.entries(metadata)
-    .map(([key, value]) => `${key} ${Buffer.from(value).toString('base64')}`)
-    .join(',');
-}
-
-export function uploadImageUsingTus(image: UploadInput): Promise<string> {
+export function uploadImage(image: UploadInput): Promise<string> {
   return new Promise((resolve, reject) => {
     const env = getEnv();
 

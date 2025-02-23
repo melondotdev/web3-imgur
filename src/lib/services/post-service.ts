@@ -1,6 +1,6 @@
 import type { CreatePostRequest } from '@/lib/types/request/create-post-request';
-import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
 import type { ApiError } from '@/lib/types/response/api-response';
+import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
 
 export async function createPost(
   data: CreatePostRequest,
@@ -9,8 +9,8 @@ export async function createPost(
   formData.append('title', data.title);
   formData.append('username', data.username);
   formData.append('image', data.image);
-  formData.append('tags', JSON.stringify(data.tags));
-  
+  formData.append('tags', data.tags?.join(',') ?? '');
+
   const response = await fetch('/api/post', {
     method: 'POST',
     body: formData,
