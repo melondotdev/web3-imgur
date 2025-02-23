@@ -1,5 +1,7 @@
 import { supabaseClient, supabasePublicClient } from '@/lib/config/supabase';
 import type { DbPostTag, DbTag } from '@/lib/types/db/post';
+import type { Post } from '@/lib/types/post';
+import type { PostSortOption } from './get-all-posts';
 
 type CreatePostTagParams = {
   postId: string;
@@ -78,7 +80,7 @@ export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
   if (error) {
     throw new Error(`Failed to fetch post tags: ${error.message}`);
   }
-
+  
   // Group tags by post_id
   return data.reduce(
     (acc, { post_id, tag }) => {
@@ -90,4 +92,58 @@ export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
     },
     {} as Record<string, DbTag[]>,
   );
+}
+
+export async function getPostsByTag(
+  tagName: string,
+  sortBy: PostSortOption = 'newest',
+  page: number = 0
+): Promise<Post[]> {
+  // Get posts that have this tag using proper joins
+  const query = supabasePublicClient()
+    .from('tags')
+    .select(`
+      posts!post_tags!inner(
+        id,
+        title,
+        description,
+        image_id,
+        created_at,
+        username,
+        votes
+      )
+    `)
+    .eq('name', tagName);
+
+  // Apply sorting to the posts
+  if (sortBy === 'most-voted') {
+    query.order('posts(votes)', { ascending: false });
+  } else {
+    query.order('posts(created_at)', { ascending: false });
+  }
+  
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to fetch posts by tag: ${error.message}`);
+  }
+
+  const allPosts = (data?.[0]?.posts || []).map(post => ({
+    id: post.id,
+    title: post.title,
+    description: post.description,
+    imageUrl: post.image_id,
+    createdAt: post.created_at,
+    username: post.username,
+    votes: post.votes,
+    tags: [tagName]
+  })) as Post[];
+
+  // Return empty array if we've gone past the end of available posts
+  if (page * 20 >= allPosts.length) {
+    return [];
+  }
+
+  // Return paginated slice of posts
+  return allPosts.slice(page * 20, (page + 1) * 20);
 }

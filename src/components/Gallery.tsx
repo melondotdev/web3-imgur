@@ -11,6 +11,34 @@ import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
 import { createComment } from '@/lib/services/comment-service';
 import { useWallet } from '@suiet/wallet-kit';
+import styles from './Gallery.module.css';
+import { getAllTags } from '@/lib/services/db/tag-service';
+import { getPostsByTag } from '@/lib/services/db/post-tags-service';
+
+interface TagCount {
+  tag: string;
+  count: number;
+}
+
+const MAX_VISIBLE_TAGS = 5; // Adjust this number as needed
+
+function reorderPosts(posts: Post[], columnCount: number): Post[] {
+  const rows = Math.ceil(posts.length / columnCount);
+  const reordered = new Array(posts.length);
+  
+  posts.forEach((post, i) => {
+    // Calculate position that maintains left-to-right order
+    const col = Math.floor(i / rows);
+    const row = i % rows;
+    const newIndex = row * columnCount + col;
+    
+    if (newIndex < posts.length) {
+      reordered[newIndex] = post;
+    }
+  });
+  
+  return reordered.filter(Boolean); // Remove any empty slots
+}
 
 export function Gallery() {
   const wallet = useWallet();
@@ -22,6 +50,11 @@ export function Gallery() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const loadingRef = useRef(false);
+  const [columnCount, setColumnCount] = useState(4);
+  const [tags, setTags] = useState<TagCount[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [tagSearch, setTagSearch] = useState('');
+  const [scrollLoadingEnabled, setScrollLoadingEnabled] = useState(false);
   
   // Function to load posts
   const loadPosts = useCallback(async (pageNum: number, replace: boolean = false) => {
@@ -31,12 +64,15 @@ export function Gallery() {
     setLoading(true);
 
     try {
-      const newPosts = await getAllPosts(sortBy, pageNum);
-      
-      if (newPosts.length === 0) {
-        setHasMore(false);
-      } else {
-        setPosts(prev => replace ? newPosts : [...prev, ...newPosts]);
+      // Only fetch from server if not filtering by tag
+      if (!selectedTag) {
+        const newPosts = await getAllPosts(sortBy, pageNum);
+        
+        if (newPosts.length === 0) {
+          setHasMore(false);
+        } else {
+          setPosts(prev => replace ? newPosts : [...prev, ...newPosts]);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch posts:', error);
@@ -45,7 +81,7 @@ export function Gallery() {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [sortBy]);
+  }, [sortBy, selectedTag]);
 
   // Initial load and sort change handler
   useEffect(() => {
@@ -69,18 +105,18 @@ export function Gallery() {
     return unsubscribe;
   }, [sortBy, loadPosts]);
 
-  // Infinite scroll handler
+  // Update handleScroll to only work when scrollLoadingEnabled is true
   const handleScroll = useCallback(() => {
-    if (!hasMore || loading || loadingRef.current) return;
+    if (!hasMore || loading || loadingRef.current || !scrollLoadingEnabled) return;
 
     const scrollPosition = window.innerHeight + window.scrollY;
-    const threshold = document.documentElement.scrollHeight - 800; // Load more when within 800px of bottom
+    const threshold = document.documentElement.scrollHeight - 800;
 
     if (scrollPosition > threshold) {
       setPage(prev => prev + 1);
       loadPosts(page + 1);
     }
-  }, [hasMore, loading, loadPosts, page]);
+  }, [hasMore, loading, loadPosts, page, scrollLoadingEnabled]);
 
   // Set up scroll listener
   useEffect(() => {
@@ -104,7 +140,51 @@ export function Gallery() {
       setComments([]);
     }
   }, [selectedPost]);
-  
+
+  // Update column count on window resize
+  useEffect(() => {
+    const updateColumnCount = () => {
+      const width = window.innerWidth;
+      if (width < 1024) { // lg breakpoint
+        setColumnCount(2);
+      } else {
+        setColumnCount(4);
+      }
+    };
+
+    updateColumnCount();
+    window.addEventListener('resize', updateColumnCount);
+    return () => window.removeEventListener('resize', updateColumnCount);
+  }, []);
+
+  // Load tags
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tagCounts = await getAllTags();
+        setTags(tagCounts);
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+        toast.error('Failed to load tags');
+      }
+    };
+    
+    loadTags();
+  }, []);
+
+  // Add a function to get filtered posts
+  const getFilteredPosts = useCallback(() => {
+    if (!selectedTag) return posts;
+    return posts.filter(post => post.tags?.includes(selectedTag));
+  }, [posts, selectedTag]);
+
+  // Add handleLoadMore function
+  const handleLoadMore = useCallback(() => {
+    setPage(prev => prev + 1);
+    loadPosts(page + 1);
+    setScrollLoadingEnabled(true);
+  }, [loadPosts, page]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -129,33 +209,92 @@ export function Gallery() {
     }
   };
 
+  // Filtered tags computation
+  const filteredTags = tags
+    .filter(tag => tag.tag.toLowerCase().includes(tagSearch.toLowerCase()))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20); // Show top 20 matching tags
+
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center gap-4">
+        <div className="relative flex-grow max-w-md">
+          <input
+            type="text"
+            placeholder="Search tags..."
+            value={tagSearch}
+            onChange={(e) => setTagSearch(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md"
+          />
+        </div>
+
+        <div className="flex-grow flex items-center gap-2 overflow-x-auto">
+          {selectedTag && (
+            <button
+              onClick={() => {
+                setSelectedTag(null);
+              }}
+              className="shrink-0 px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600"
+            >
+              Clear Filter
+            </button>
+          )}
+          {filteredTags
+            .slice(0, tagSearch ? undefined : MAX_VISIBLE_TAGS)
+            .map(({ tag, count }) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  setSelectedTag(tag);
+                }}
+                className={`shrink-0 px-3 py-1 text-sm rounded-full ${
+                  selectedTag === tag
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                }`}
+              >
+                {tag} ({count})
+              </button>
+            ))}
+        </div>
+
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as PostSortOption)}
-          className="px-4 py-2 border rounded-md bg-white dark:bg-gray-800"
+          className="shrink-0 px-4 py-2 border rounded-md bg-white dark:bg-gray-800"
         >
           <option value="newest">Latest Posts</option>
           <option value="most-voted">Most Voted</option>
         </select>
       </div>
-      
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {posts.map((post) => (
-          <PostCard 
-            key={post.id} 
-            post={post} 
-            onClick={setSelectedPost} 
-            onVote={handleVote} 
-          />
+
+      <div className={styles.masonryGrid}>
+        {reorderPosts(getFilteredPosts(), columnCount).map((post) => (
+          <div key={post.id} className={styles.gridItem}>
+            <PostCard 
+              post={post} 
+              onClick={setSelectedPost} 
+              onVote={handleVote} 
+            />
+          </div>
         ))}
       </div>
 
       {loading && (
         <div className="flex justify-center my-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      )}
+
+      {/* Add Load More button */}
+      {hasMore && !loading && !scrollLoadingEnabled && (
+        <div className="flex justify-center my-4">
+          <button
+            onClick={handleLoadMore}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Load More
+          </button>
         </div>
       )}
       

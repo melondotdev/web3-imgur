@@ -10,8 +10,8 @@ import type { PropsWithChildren } from 'react';
 getClientEnv();
 
 export const metadata: Metadata = {
-  title: 'meme.fun',
-  description: 'meme.fun',
+  title: 'bork.hub',
+  description: 'bork.hub',
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {

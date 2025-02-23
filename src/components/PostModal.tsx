@@ -3,6 +3,9 @@ import type { Post, Comment } from '@/lib/types/post';
 import { ConnectButton, useWallet } from '@suiet/wallet-kit';
 import { ArrowBigUp, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useVote } from '@/lib/hooks/useVote';
+import { cn } from '@/lib/utils/cn';
+import { trimUsername } from '@/lib/utils/trim-username';
 
 interface PostModalProps {
   post: Post;
@@ -22,14 +25,41 @@ export function PostModal({
   onComment,
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
+  const [localVotes, setLocalVotes] = useState(post.votes);
   const wallet = useWallet();
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
+  const { toggleVote, isVoting, hasVoted, error, isWalletConnected } = useVote(post.id);
   
   // Update localComments when comments prop changes
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
+
+  // Update localVotes when post changes
+  useEffect(() => {
+    setLocalVotes(post.votes);
+  }, [post.votes]);
   
+  const handleVoteClick = async () => {
+    if (!isWalletConnected) {
+      console.log('Please connect your wallet to vote');
+      return;
+    }
+    
+    try {
+      // Update local vote count immediately for better UX
+      setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
+      
+      await toggleVote(post.id, localVotes, () => {
+        onVote(post.id);
+      });
+    } catch (error) {
+      // If the vote fails, revert the local count
+      setLocalVotes(post.votes);
+      console.error('Vote failed:', error);
+    }
+  };
+
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
@@ -76,14 +106,28 @@ export function PostModal({
           </div>
           <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
             <div className="flex items-center justify-between mb-4">
-              {/* Updated to use post.username instead of post.author */}
-              <span className="text-yellow-500/80">@{post.username}</span>
+              <span className="text-yellow-500/80">@{trimUsername(post.username)}</span>
               <button
-                onClick={() => onVote(post.id)}
-                className="flex items-center space-x-2 text-yellow-500 hover:text-yellow-400"
+                onClick={handleVoteClick}
+                disabled={isVoting}
+                className={cn(
+                  "flex items-center space-x-2 text-yellow-500 hover:text-yellow-400",
+                  isVoting && "opacity-50 cursor-not-allowed",
+                  !isWalletConnected && "opacity-50",
+                  hasVoted && "text-yellow-400"
+                )}
+                title={
+                  !isWalletConnected 
+                    ? "Connect wallet to vote" 
+                    : isVoting
+                      ? "Processing..."
+                      : hasVoted
+                        ? "Click to remove vote"
+                        : "Click to vote"
+                }
               >
-                <ArrowBigUp className="w-5 h-5" />
-                <span>{post.votes}</span>
+                <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
+                <span>{localVotes}</span>
               </button>
             </div>
             
@@ -95,7 +139,7 @@ export function PostModal({
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-yellow-500/80">
-                      @{comment.author}
+                      @{trimUsername(comment.author)}
                     </span>
                     <span className="text-xs text-yellow-500/50">
                       {new Date(comment.createdAt).toLocaleDateString()}
