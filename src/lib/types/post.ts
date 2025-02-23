@@ -15,6 +15,7 @@ export const postSchema = z.object({
   createdAt: z.string().datetime(),
   imageUrl: z.string().url(),
   tags: z.array(z.string()),
+  votes: z.number(),
 });
 
 export type Comment = z.infer<typeof commentSchema>;

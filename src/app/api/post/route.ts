@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         createdAt: post.created_at,
         imageUrl,
         tags: [],
-        comments: [],
+        votes: 0,
       },
     };
 

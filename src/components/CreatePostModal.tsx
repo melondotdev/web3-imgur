@@ -74,9 +74,8 @@ export function CreatePostModal({
     resetField('image');
     setPreview('');
   };
-
   useEffect(() => {
-    setValue('tags', tags.map((tag) => tag.id).join(','));
+    setValue('tags', tags.map((tag) => tag.id));
   }, [tags, setValue]);
 
   useEffect(() => {

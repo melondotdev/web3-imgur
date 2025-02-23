@@ -38,16 +38,25 @@ export function Gallery() {
     return <div>Loading...</div>;
   }
 
+  const handleVote = (postId: string) => {
+    console.log('Voting for post:', postId);
+  };
+
   return (
     <>
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} onClick={setSelectedPost} />
+          <PostCard 
+            key={post.id} 
+            post={post} 
+            onClick={setSelectedPost} 
+            onVote={handleVote} 
+          />
         ))}
       </div>
-      {/* FIXME */}
       <PostModal
-        post={selectedPost}
+        post={selectedPost!}
+        onVote={handleVote}
         comments={[]}
         isOpen={!!selectedPost}
         onClose={() => setSelectedPost(null)}

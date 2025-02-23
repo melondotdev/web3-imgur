@@ -1,4 +1,4 @@
-import { Post, User, Comment } from '../../types';
+import { Post, User, Comment } from '@/lib/types/post';
 
 export const mockPosts: Post[] = [
   {

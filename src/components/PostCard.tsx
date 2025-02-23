@@ -1,4 +1,4 @@
-import type { Post } from '@/lib/types';
+import type { Post } from '@/lib/types/post';
 import { ArrowBigUp, MessageCircle } from 'lucide-react';
 
 interface PostCardProps {

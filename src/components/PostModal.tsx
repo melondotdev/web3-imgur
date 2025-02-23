@@ -17,7 +17,7 @@ interface PostModalProps {
   comments: Comment[];
   isOpen: boolean;
   onClose: () => void;
-  onVote?: (id: string) => void;
+  onVote: (id: string) => void;
   onComment?: (id: string, content: string, signature: string) => void;
 }
 
@@ -89,7 +89,7 @@ export function PostModal({
                 <span>{post.votes}</span>
               </button>
             </div>
-
+            
             <div className="space-y-4 mb-6 max-h-[50vh] overflow-y-auto">
               {localComments.map((comment) => (
                 <div
