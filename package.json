@@ -15,11 +15,11 @@
     "ci:lint": "biome ci --formatter-enabled=false --organize-imports-enabled=false"
   },
   "dependencies": {
-    "@hookform/resolvers": "^4.1.0",
+    "@hookform/resolvers": "^4.1.1",
     "@mysten/sui": "^1.21.2",
     "@suiet/wallet-kit": "^0.3.4",
     "@supabase/supabase-js": "^2.48.1",
-    "@tanstack/react-query": "^5.66.7",
+    "@tanstack/react-query": "^5.66.9",
     "dotenv": "^16.4.7",
     "lucide-react": "^0.344.0",
     "next": "^15.1.7",
@@ -33,14 +33,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "@types/tus-js-client": "^2.1.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.18",
-    "globals": "^15.9.0",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.5.3"
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
   }
 }
