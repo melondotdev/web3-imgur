@@ -1,7 +1,0 @@
-[build]
-  command = "bun run build"  # Adjust based on your build script
-  publish = ".next"  # Adjust based on your Next.js output folder
-
-[context.production.environment]
-  BUN_VERSION = "1.0.0"  # Use the latest Bun version
-  NODE_VERSION = "20"  # Ensure compatibility

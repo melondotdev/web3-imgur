@@ -31,3 +31,5 @@ dist-ssr
 
 # biome
 .biome
+# Local Netlify folder
+.netlify
