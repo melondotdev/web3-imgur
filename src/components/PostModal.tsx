@@ -16,7 +16,6 @@ interface PostModalProps {
   comments: Comment[];
   isOpen: boolean;
   onClose: () => void;
-  onVote: (id: string) => void;
   onComment?: (id: string, content: string) => void;
 }
 
@@ -26,7 +25,6 @@ export function PostModal({
   comments,
   isOpen,
   onClose,
-  onVote,
   onComment,
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
@@ -61,7 +59,6 @@ export function PostModal({
       await toggleVote(post.id, localVotes, () => {
         // Update local vote count only after successful vote
         setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-        onVote(post.id);
       });
     } catch (error) {
       console.error('Vote failed:', error);

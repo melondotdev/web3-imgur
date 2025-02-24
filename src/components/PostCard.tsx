@@ -10,11 +10,10 @@ import { toast } from 'react-hot-toast';
 interface PostCardProps {
   isWalletConnected: boolean;
   post: Post;
-  onVote: (id: string) => void;
   onClick: (post: Post) => void;
 }
 
-export function PostCard({ isWalletConnected, post, onVote, onClick }: PostCardProps) {
+export function PostCard({ isWalletConnected, post, onClick }: PostCardProps) {
   const { toggleVote, isVoting, hasVoted, error, checkVoteStatus } = useVote(post.id);
   const [localVotes, setLocalVotes] = useState(post.votes);
 
@@ -41,7 +40,6 @@ export function PostCard({ isWalletConnected, post, onVote, onClick }: PostCardP
       await toggleVote(post.id, localVotes, () => {
         // Update local vote count only after successful vote
         setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-        onVote(post.id);
       });
     } catch (error) {
       console.error('Vote failed:', error);

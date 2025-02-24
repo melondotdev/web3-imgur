@@ -13,7 +13,6 @@ import { createComment } from '@/lib/services/comment-service';
 // import { useWallet } from '@suiet/wallet-kit';
 import { useWallet } from "@solana/wallet-adapter-react";
 import styles from './Gallery.module.css';
-import { getAllTags } from '@/lib/services/db/tag-service';
 
 interface TagCount {
   tag: string;
@@ -105,19 +104,6 @@ export function Gallery() {
     return unsubscribe;
   }, [sortBy, loadPosts]);
 
-  // Update handleScroll to only work when scrollLoadingEnabled is true
-  const handleScroll = useCallback(() => {
-    if (!hasMore || loading || loadingRef.current || !scrollLoadingEnabled) return;
-
-    const scrollPosition = window.innerHeight + window.scrollY;
-    const threshold = document.documentElement.scrollHeight - 800;
-
-    if (scrollPosition > threshold) {
-      setPage(prev => prev + 1);
-      loadPosts(page + 1);
-    }
-  }, [hasMore, loading, loadPosts, page, scrollLoadingEnabled]);
-
   // Load comments when a post is selected
   useEffect(() => {
     if (selectedPost) {
@@ -151,20 +137,35 @@ export function Gallery() {
     return () => window.removeEventListener('resize', updateColumnCount);
   }, []);
 
-  // Load tags
+  // Update the useEffect for loading tags
   useEffect(() => {
-    const loadTags = async () => {
-      try {
-        const tagCounts = await getAllTags();
-        setTags(tagCounts);
-      } catch (error) {
-        console.error('Failed to fetch tags:', error);
-        toast.error('Failed to load tags');
-      }
+    const calculateTagCounts = () => {
+      // Create a map to store tag counts
+      const tagCountMap = new Map<string, number>();
+      
+      // Count tags from all posts
+      posts.forEach(post => {
+        if (post.tags) {
+          post.tags.forEach(tag => {
+            tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1);
+          });
+        }
+      });
+      
+      // Convert map to array of TagCount objects
+      const tagCounts: TagCount[] = Array.from(tagCountMap.entries()).map(([tag, count]) => ({
+        tag,
+        count
+      }));
+      
+      // Sort by count in descending order
+      tagCounts.sort((a, b) => b.count - a.count);
+      
+      setTags(tagCounts);
     };
-    
-    loadTags();
-  }, []);
+
+    calculateTagCounts();
+  }, [posts]); // Dependency on posts array
 
   // Add a function to get filtered posts
   const getFilteredPosts = useCallback(() => {
@@ -182,11 +183,6 @@ export function Gallery() {
   if (loading) {
     return <div>Loading...</div>;
   }
-  
-  const handleVote = async (postId: string) => {
-    // Remove this console.log since we'll handle votes in the PostCard component
-    // The PostCard component will use the useVote hook directly
-  };
   
   const handleComment = async (postId: string, content: string) => {
     try {
@@ -272,8 +268,7 @@ export function Gallery() {
           <div key={post.id} className={styles.gridItem}>
             <PostCard 
               post={post} 
-              onClick={setSelectedPost} 
-              onVote={handleVote}
+              onClick={setSelectedPost}
               isWalletConnected={wallet.connected}
             />
           </div>
@@ -302,7 +297,6 @@ export function Gallery() {
         <PostModal
           wallet={wallet}
           post={selectedPost}
-          onVote={handleVote}
           comments={comments}
           isOpen={true}
           onClose={() => setSelectedPost(null)}
