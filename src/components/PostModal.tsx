@@ -215,13 +215,45 @@ export function PostModal({
             />
           </div>
           <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
-            <div className="flex items-center justify-between mb-4">
+            {/* Title and upvote section */}
+            <div className="flex items-center justify-start gap-4">
+              {displayPost.title && (
+                <h2 className="text-xl font-semibold text-white">
+                  {displayPost.title}
+                </h2>
+              )}
+              <button
+                onClick={handleVoteClick}
+                disabled={isVoting}
+                className={cn(
+                  "flex items-center space-x-2 text-white hover:text-yellow-400",
+                  isVoting && "opacity-50 cursor-not-allowed",
+                  !wallet.connected && "opacity-50",
+                  hasVoted && "text-white"
+                )}
+                title={
+                  !wallet.connected 
+                  ? "Connect wallet to vote" 
+                  : isVoting
+                  ? "Processing..."
+                  : hasVoted
+                  ? "Click to remove vote"
+                  : "Click to vote"
+                }
+                >
+                <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-white hover:fill-yellow-400")} />
+                <span>{displayPost.votes}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center mb-4">
               <div className="flex items-center gap-2">
+                <span className="text-yellow-500/50 text-sm">creator:</span>
                 <a
                   href={getSolscanUrl(displayPost.username)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-yellow-500/80 hover:text-yellow-500"
+                  className="text-yellow-500/80 hover:text-yellow-500 text-sm"
                   title="View on Solscan"
                 >
                   @{trimUsername(displayPost.username)}
@@ -231,31 +263,9 @@ export function PostModal({
                   className="text-yellow-500/60 hover:text-yellow-500 p-1"
                   title="Copy address"
                 >
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-4 h-4 text-xs" />
                 </button>
               </div>
-              <button
-                onClick={handleVoteClick}
-                disabled={isVoting}
-                className={cn(
-                  "flex items-center space-x-2 text-yellow-500 hover:text-yellow-400",
-                  isVoting && "opacity-50 cursor-not-allowed",
-                  !wallet.connected && "opacity-50",
-                  hasVoted && "text-yellow-400"
-                )}
-                title={
-                  !wallet.connected 
-                    ? "Connect wallet to vote" 
-                    : isVoting
-                      ? "Processing..."
-                      : hasVoted
-                        ? "Click to remove vote"
-                        : "Click to vote"
-                }
-              >
-                <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
-                <span>{displayPost.votes}</span>
-              </button>
             </div>
             
             <div className="space-y-4 mb-6 max-h-[50vh] overflow-y-auto">
@@ -264,13 +274,13 @@ export function PostModal({
                   key={`${comment.id}-${comment.author}`}
                   className="border-b border-yellow-500/10 pb-4"
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
                       <a
                         href={getSolscanUrl(comment.author)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-yellow-500/80 hover:text-yellow-500"
+                        className="text-yellow-500/80 hover:text-yellow-500 text-xs"
                         title="View on Solscan"
                       >
                         @{trimUsername(comment.author)}
@@ -280,15 +290,12 @@ export function PostModal({
                         className="text-yellow-500/60 hover:text-yellow-500 p-1"
                         title="Copy address"
                       >
-                        <Copy className="w-4 h-4" />
+                        <Copy className="w-3 h-3" />
                       </button>
+                      <span className="text-xs text-yellow-500/50">
+                        {new Date(comment.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
-                    <span className="text-xs text-yellow-500/50">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-yellow-500/90">{comment.content}</p>
-                  <div className="flex items-center mt-2 text-yellow-500/50">
                     <button
                       onClick={() => handleCommentVote(comment.id, comment.votes)}
                       disabled={isCommentVoting}
@@ -303,6 +310,7 @@ export function PostModal({
                       <span>{comment.votes}</span>
                     </button>
                   </div>
+                  <p className="text-yellow-500/90">{comment.content}</p>
                 </div>
               ))}
             </div>
