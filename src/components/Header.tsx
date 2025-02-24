@@ -1,13 +1,15 @@
 'use client';
 import { trimAddress } from '@/lib/utils/trim-address';
-import { ConnectModal, useWallet } from '@suiet/wallet-kit';
 import { Flame, Plus, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { CreatePostModal } from './CreatePostModal';
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
+import "@solana/wallet-adapter-react-ui/styles.css";
 
 export function Header() {
-  const wallet = useWallet();
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const { setVisible } = useWalletModal();
+  const { connected, disconnect, publicKey } = useWallet();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   return (
@@ -22,7 +24,7 @@ export function Header() {
             <div className="flex items-center space-x-4">
               <button
                 type="button"
-                disabled={wallet.status !== 'connected'}
+                disabled={!connected}
                 onClick={() => setIsCreateModalOpen(true)}
                 className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30"
               >
@@ -30,41 +32,33 @@ export function Header() {
                 <span>create</span>
               </button>
 
-              <ConnectModal
-                open={isConnectModalOpen}
-                onConnectSuccess={() => {
-                  setIsConnectModalOpen(false);
+              <button
+                className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
+                type="button"
+                onClick={() => {
+                  if (!connected) {
+                    setVisible(true);
+                  } else {
+                    disconnect();
+                  }
                 }}
               >
-                <button
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-md hover:bg-yellow-500/30 w-48"
-                  type="button"
-                  onClick={() => {
-                    if (wallet.status !== 'connected') {
-                      setIsConnectModalOpen(true);
-                    } else {
-                      wallet.disconnect();
-                      // TODO: Implement disconnect
-                    }
-                  }}
-                >
-                  <Wallet className="w-5 h-5" />
-                  <span>
-                    {wallet.status === 'connected' && wallet.address
-                      ? trimAddress(wallet.address)
-                      : 'connect wallet'}
-                  </span>
-                </button>
-              </ConnectModal>
+                <Wallet className="w-5 h-5" />
+                <span>
+                  {connected && publicKey
+                    ? trimAddress(publicKey.toString())
+                    : 'connect wallet'}
+                </span>
+              </button>
             </div>
           </div>
         </div>
       </header>
-      {wallet.status === 'connected' && wallet.address && (
+      {connected && publicKey && (
         <CreatePostModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          walletAddress={wallet.address}
+          walletAddress={publicKey.toString()}
         />
       )}
     </>

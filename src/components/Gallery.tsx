@@ -10,10 +10,10 @@ import { toast } from 'react-hot-toast';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
 import { createComment } from '@/lib/services/comment-service';
-import { useWallet } from '@suiet/wallet-kit';
+// import { useWallet } from '@suiet/wallet-kit';
+import { useWallet } from "@solana/wallet-adapter-react";
 import styles from './Gallery.module.css';
 import { getAllTags } from '@/lib/services/db/tag-service';
-import { getPostsByTag } from '@/lib/services/db/post-tags-service';
 
 interface TagCount {
   tag: string;
@@ -118,12 +118,6 @@ export function Gallery() {
     }
   }, [hasMore, loading, loadPosts, page, scrollLoadingEnabled]);
 
-  // Set up scroll listener
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
   // Load comments when a post is selected
   useEffect(() => {
     if (selectedPost) {
@@ -193,11 +187,15 @@ export function Gallery() {
     console.log('Voting for post:', postId);
   };
   
-  const handleComment = async (postId: string, content: string, signature: string) => {
+  const handleComment = async (postId: string, content: string) => {
     try {
+      if (!wallet.publicKey) {
+        throw new Error('Wallet not connected');
+      }
+
       await createComment(postId, {
-        username: wallet.account?.address || 'unknown',
-        text: content,
+        username: wallet.publicKey.toString(),
+        text: content
       });
       
       // Refresh comments after posting

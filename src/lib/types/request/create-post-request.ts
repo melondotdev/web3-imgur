@@ -1,4 +1,5 @@
-import { suiAddressSchema } from '@/lib/validators/sui-address';
+// import { suiAddressSchema } from '@/lib/validators/sui-address';
+import { solanaAddressSchema } from '@/lib/utils/validators';
 import { z } from 'zod';
 
 // Maximum file size (10MB)
@@ -30,7 +31,7 @@ export const createPostSchema = z.object({
     .string()
     .min(1, 'Title is required')
     .max(500, 'Title must be less than 500 characters'),
-  username: suiAddressSchema,
+  username: solanaAddressSchema,
   image: z
     .instanceof(File, { message: 'Image is required' })
     .refine((file) => file.size <= MAX_FILE_SIZE, 'Max file size is 10MB')

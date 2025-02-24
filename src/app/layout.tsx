@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SuiProvider } from '@/components/providers/SuiProvider';
+// import { SuiProvider } from '@/components/providers/SuiProvider';
+import { SolanaProvider } from '@/components/providers/SolanaProvider';
 import { Toaster } from 'react-hot-toast';
 import '@suiet/wallet-kit/style.css';
 import { getClientEnv } from '@/lib/config/client-env';
@@ -19,7 +20,8 @@ export default function RootLayout({ children }: PropsWithChildren) {
     <html lang="en">
       <body suppressHydrationWarning={true}>
         <Toaster position="top-right" />
-        <SuiProvider>{children}</SuiProvider>
+        {/* <SuiProvider>{children}</SuiProvider> */}
+        <SolanaProvider>{children}</SolanaProvider>
       </body>
     </html>
   );

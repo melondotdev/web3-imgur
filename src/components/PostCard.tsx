@@ -4,6 +4,7 @@ import { trimUsername } from '@/lib/utils/trim-username';
 import { useVote } from '@/lib/hooks/useVote';
 import { cn } from '@/lib/utils/cn';
 import { useState, useEffect } from 'react';
+import { useWallet } from "@solana/wallet-adapter-react";
 
 interface PostCardProps {
   post: Post;
@@ -12,7 +13,8 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onVote, onClick }: PostCardProps) {
-  const { toggleVote, isVoting, hasVoted, error, isWalletConnected } = useVote(post.id);
+  const { connected: isWalletConnected } = useWallet();
+  const { toggleVote, isVoting, hasVoted, error } = useVote(post.id);
   const [localVotes, setLocalVotes] = useState(post.votes);
 
   // Update localVotes when post changes
@@ -28,9 +30,10 @@ export function PostCard({ post, onVote, onClick }: PostCardProps) {
     }
     
     try {
+      // Update local vote count immediately for better UX
+      setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
+      
       await toggleVote(post.id, localVotes, () => {
-        // Update local vote count immediately
-        setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
         onVote(post.id);
       });
     } catch (error) {

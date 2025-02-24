@@ -1,6 +1,7 @@
 import { Modal } from '@/components/base/Modal';
 import type { Post, Comment } from '@/lib/types/post';
-import { ConnectButton, useWallet } from '@suiet/wallet-kit';
+// import { ConnectButton, useWallet } from '@suiet/wallet-kit';
+import { useWallet } from "@solana/wallet-adapter-react";
 import { ArrowBigUp, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useVote } from '@/lib/hooks/useVote';
@@ -13,7 +14,7 @@ interface PostModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVote: (id: string) => void;
-  onComment?: (id: string, content: string, signature: string) => void;
+  onComment?: (id: string, content: string) => void;
 }
 
 export function PostModal({
@@ -26,15 +27,15 @@ export function PostModal({
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
   const [localVotes, setLocalVotes] = useState(post.votes);
-  const wallet = useWallet();
+  const { connected: isWalletConnected, signMessage, publicKey } = useWallet();
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
-  const { toggleVote, isVoting, hasVoted, error, isWalletConnected } = useVote(post.id);
+  const { toggleVote, isVoting, hasVoted, error } = useVote(post.id);
   
   // Update localComments when comments prop changes
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
-
+  
   // Update localVotes when post changes
   useEffect(() => {
     setLocalVotes(post.votes);
@@ -63,32 +64,40 @@ export function PostModal({
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
-    if (trimmed && wallet.connected) {
-      try {
-        // Convert the comment into bytes.
-        const msgBytes = new TextEncoder().encode(trimmed);
-        // Sign the message using the connected wallet.
-        const result = await wallet.signPersonalMessage({ message: msgBytes });
+    if (!trimmed || !isWalletConnected || !signMessage || !publicKey) {
+      return;
+    }
 
-        // Build a transient comment object.
-        const newCommentObj: Comment = {
-          id: Date.now().toString(), // Use a timestamp as a simple unique ID.
-          author: wallet.account?.address || 'unknown',
-          content: trimmed,
-          createdAt: new Date().toISOString(),
-          votes: 0
-        };
-
-        // Optionally pass the comment to an external callback for server-side persistence.
-        if (onComment) {
-          onComment(post.id, trimmed, result.signature);
+    try {
+      // Convert the comment into bytes.
+      const msgBytes = new TextEncoder().encode(trimmed);
+      // Sign the message using the connected wallet.
+      const signature = await signMessage(msgBytes);
+      
+      // Build a transient comment object.
+      const newCommentObj: Comment = {
+        id: Date.now().toString(),
+        author: publicKey.toString(),
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+        votes: 0
+      };
+      
+      if (onComment) {
+        try {
+          await onComment(post.id, trimmed);
+          // Update the UI immediately.
+          setLocalComments((prev) => [...prev, newCommentObj]);
+          setNewComment('');
+        } catch (error) {
+          console.error('Failed to submit comment:', error);
+          // Show error to user
+          alert('Failed to submit comment. Please try again.');
         }
-        // Update the UI immediately.
-        setLocalComments((prev) => [...prev, newCommentObj]);
-        setNewComment('');
-      } catch (error) {
-        console.error('Error signing comment:', error);
       }
+    } catch (error) {
+      console.error('Error signing comment:', error);
+      alert('Error signing comment. Please try again.');
     }
   }
 
@@ -171,13 +180,6 @@ export function PostModal({
                 </button>
               </div>
             </form>
-
-            {/* If wallet is not connected, show the connect button */}
-            {!wallet.connected && (
-              <div className="mt-4">
-                <ConnectButton />
-              </div>
-            )}
           </div>
         </div>
       )}
