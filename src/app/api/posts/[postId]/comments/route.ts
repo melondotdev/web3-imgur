@@ -1,41 +1,43 @@
-// app/api/posts/[postId]/comments/route.ts
-
 import { createComment } from '@/lib/services/db/comment-service';
 import { validateCreateCommentRequest } from '@/lib/types/request/create-comment-request';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Add segment configuration
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { postId: string } }
 ) {
+  console.log('Handler initialization');
+  
   try {
-    const { postId } = params;
-    const body = await request.json();
-    console.log('Request body:', body); // Debug log
+    // Get postId from URL
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const postId = segments[segments.length - 2]; // Get postId from URL path
     
-    // Use our existing validation
+    console.log('URL:', url.toString());
+    console.log('PostId from URL:', postId);
+    
+    const body = await request.json();
+    
     const validatedData = validateCreateCommentRequest(body);
 
-    // Create comment using the service
     const commentData = await createComment({
       postId,
       author: validatedData.username,
       content: validatedData.text,
     });
-    
-    console.log('DB Comment data:', commentData); // Debug log
 
     const response = {
       comment: {
         id: commentData.id,
         author: commentData.author,
         content: commentData.content,
-        created_at: commentData.created_at, // Note: using snake_case as per DB
+        created_at: commentData.created_at,
         votes: commentData.votes || 0,
       }
     };
-
-    console.log('Response data:', response); // Debug log
     
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
