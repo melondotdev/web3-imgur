@@ -1,40 +1,140 @@
-import React from 'react';
-import { ArrowBigUp, MessageCircle } from 'lucide-react';
-import { Post } from '../types';
+import type { Post } from '@/lib/types/post';
+import { ArrowBigUp, MessageCircle, Copy } from 'lucide-react';
+import { trimUsername } from '@/lib/utils/trim-username';
+import { cn } from '@/lib/utils/cn';
+import { useState, useEffect } from 'react';
+import { getSolscanUrl } from '@/lib/utils/solana';
+import { toast } from 'react-hot-toast';
 
 interface PostCardProps {
+  isWalletConnected: boolean;
   post: Post;
-  onVote: (id: string) => void;
-  onClick: () => void;
+  onClick: (post: Post) => void;
+  onVoteClick: (postId: string, currentVotes: number) => Promise<void>;
+  hasVoted: boolean;
+  isVoting: boolean;
+  onImageLoad: (postId: string, imageUrl: string) => void;
 }
 
-export function PostCard({ post, onVote, onClick }: PostCardProps) {
+export function PostCard({ 
+  isWalletConnected, 
+  post, 
+  onClick, 
+  onVoteClick,
+  hasVoted,
+  isVoting,
+  onImageLoad
+}: PostCardProps) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  // Preload image
+  const handleImageLoad = () => {
+    const img = new Image();
+    img.src = post.imageUrl;
+    img.onload = () => {
+      setIsImageLoaded(true);
+      onImageLoad(post.id, post.imageUrl);
+    };
+  };
+
+  // Call handleImageLoad when component mounts
+  useEffect(() => {
+    handleImageLoad();
+  }, [post.imageUrl]);
+
+  const handleVoteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await onVoteClick(post.id, post.votes);
+  };
+
+  const handleCopyAddress = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(address);
+  };
+
   return (
-    <div 
-      className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer transform transition-transform hover:scale-[1.02]"
-      onClick={onClick}
+    <div
+      className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer"
+      onClick={() => onClick(post)}
     >
-      <img 
-        src={post.imageUrl} 
-        alt="user content"
-        className="w-full h-auto"
+      <img
+        src={post.imageUrl}
+        alt={post.title || 'Post content'}
+        className={cn(
+          "w-full h-auto",
+          !isImageLoaded && "opacity-0" // Hide image until loaded
+        )}
       />
-      <div className="p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-yellow-500/80">@{post.author}</span>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1 text-yellow-500/80">
-              <MessageCircle className="w-4 h-4" />
-              <span>{post.comments.length}</span>
+      {!isImageLoaded && (
+        <div className="w-full aspect-video flex items-center justify-center bg-gray-800">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+        </div>
+      )}
+      <div className="p-4 space-y-3">
+        {/* Title and author section */}
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-white">{post.title}</h3>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-yellow-500/80">by</span>
+            <div className="flex items-center gap-2">
+              <a
+                href={getSolscanUrl(post.username)}
+                onClick={(e) => e.stopPropagation()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-yellow-500/80 hover:text-yellow-500"
+                title="View on Solscan"
+              >
+                @{trimUsername(post.username)}
+              </a>
+              <button
+                onClick={(e) => handleCopyAddress(e, post.username)}
+                className="text-yellow-500/60 hover:text-yellow-500 p-1"
+                title="Copy address"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
             </div>
+          </div>
+        </div>
+
+        {/* Tags section */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {post.tags.map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500/80 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Interactions section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onVote(post.id);
-              }}
-              className="flex items-center space-x-2 text-yellow-500 hover:text-yellow-400"
+              onClick={handleVoteClick}
+              disabled={isVoting}
+              className={cn(
+                "flex items-center space-x-2 text-yellow-500 hover:text-yellow-400",
+                isVoting && "opacity-50 cursor-not-allowed",
+                !isWalletConnected && "opacity-50",
+                hasVoted && "text-yellow-400"
+              )}
+              title={
+                !isWalletConnected 
+                  ? "Connect wallet to vote" 
+                  : isVoting
+                    ? "Processing..."
+                    : hasVoted
+                      ? "Click to remove vote"
+                      : "Click to vote"
+              }
             >
-              <ArrowBigUp className="w-5 h-5" />
+              <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
               <span>{post.votes}</span>
             </button>
           </div>

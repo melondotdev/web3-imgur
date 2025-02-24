@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: black;
+  color: #FCD34D;
+}
+
+/* React Tags container */
+.ReactTags__tags {
+  @apply relative bg-gray-800 border border-yellow-500/20 rounded-md p-2;
+}
+
+/* Input container */
+.ReactTags__tagInput {
+  @apply w-full inline-block bg-gray-800;
+}
+
+/* Actual input field */
+.ReactTags__tagInputField,
+.ReactTags__tagInputField:focus {
+  @apply h-10 text-yellow-500 bg-gray-800 w-full px-2 focus:outline-none focus:ring-2 focus:ring-yellow-500/50;
+}
+
+/* Selected tags container */
+.ReactTags__selected {
+  @apply flex flex-wrap gap-1;
+}
+
+/* Individual tag styling */
+.ReactTags__tag {
+  @apply bg-yellow-500/20 text-yellow-500 rounded px-2 py-1 text-sm;
+}
+
+/* Remove (delete) icon styling */
+.ReactTags__remove {
+  @apply ml-1 text-yellow-500 hover:text-red-500 cursor-pointer;
+}
+
+/* Suggestions dropdown */
+.ReactTags__suggestions {
+  @apply absolute bg-white shadow-md w-full text-black z-10;
+}
+
+.ReactTags__suggestions ul {
+  @apply list-none p-0 m-0;
+}
+
+.ReactTags__suggestions li {
+  @apply border-b border-gray-200 py-2 px-3;
+  cursor: pointer;
+}
+
+.ReactTags__suggestions li:hover,
+.ReactTags__suggestions li.ReactTags__activeSuggestion {
+  @apply bg-yellow-500/20;
+}
+
+/* React Tags input placeholder */
+.ReactTags__tagInputField::placeholder {
+  @apply text-yellow-500/50;
+}

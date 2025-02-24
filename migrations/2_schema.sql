@@ -1,0 +1,2 @@
+
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE post_tags TO service_role;
