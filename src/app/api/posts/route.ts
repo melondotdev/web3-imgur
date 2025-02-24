@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!imageId) {
       throw new Error('Failed to extract image ID from URL');
     }
-
+    
     // Create post in database
     const post = await createPost({
       author: validatedData.username,

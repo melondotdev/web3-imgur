@@ -6,7 +6,7 @@ export async function createComment(
   postId: string,
   data: CreateCommentRequest,
 ): Promise<CreateCommentResponse> {
-  const response = await fetch(`/api/post/${postId}/comments`, {
+  const response = await fetch(`/api/posts/${postId}/comments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

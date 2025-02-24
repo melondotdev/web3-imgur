@@ -13,6 +13,7 @@ interface PostCardProps {
   onVoteClick: (postId: string, currentVotes: number) => Promise<void>;
   hasVoted: boolean;
   isVoting: boolean;
+  onImageLoad: (postId: string, imageUrl: string) => void;
 }
 
 export function PostCard({ 
@@ -21,8 +22,26 @@ export function PostCard({
   onClick, 
   onVoteClick,
   hasVoted,
-  isVoting 
+  isVoting,
+  onImageLoad
 }: PostCardProps) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  // Preload image
+  const handleImageLoad = () => {
+    const img = new Image();
+    img.src = post.imageUrl;
+    img.onload = () => {
+      setIsImageLoaded(true);
+      onImageLoad(post.id, post.imageUrl);
+    };
+  };
+
+  // Call handleImageLoad when component mounts
+  useEffect(() => {
+    handleImageLoad();
+  }, [post.imageUrl]);
+
   const handleVoteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await onVoteClick(post.id, post.votes);
@@ -38,7 +57,19 @@ export function PostCard({
       className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer"
       onClick={() => onClick(post)}
     >
-      <img src={post.imageUrl} alt="user content" className="w-full h-auto" />
+      <img
+        src={post.imageUrl}
+        alt={post.title || 'Post content'}
+        className={cn(
+          "w-full h-auto",
+          !isImageLoaded && "opacity-0" // Hide image until loaded
+        )}
+      />
+      {!isImageLoaded && (
+        <div className="w-full aspect-video flex items-center justify-center bg-gray-800">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+        </div>
+      )}
       <div className="p-4 space-y-3">
         {/* Title and author section */}
         <div className="space-y-1">

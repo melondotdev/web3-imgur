@@ -23,6 +23,7 @@ interface PostModalProps {
   isVoting: boolean;
   localPost?: Post;
   onLocalVoteUpdate?: (postId: string, newVoteCount: number) => void;
+  loadedImages?: Map<string, string>;
 }
 
 export function PostModal({
@@ -36,12 +37,14 @@ export function PostModal({
   hasVoted,
   isVoting,
   localPost,
-  onLocalVoteUpdate
+  onLocalVoteUpdate,
+  loadedImages
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
   const [votedComments, setVotedComments] = useState<Set<string>>(new Set());
   const [isCommentVoting, setIsCommentVoting] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   
   // Use localPost if available, otherwise fall back to post prop
   const displayPost = localPost || post;
@@ -50,6 +53,11 @@ export function PostModal({
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
+  
+  // Reset loading state when post changes
+  useEffect(() => {
+    setIsImageLoading(!loadedImages?.has(displayPost.id));
+  }, [displayPost.id, loadedImages]);
   
   const handleVoteClick = async () => {
     await onVoteClick(displayPost.id, displayPost.votes);
@@ -204,14 +212,22 @@ export function PostModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      {/* FIXME Not ideal but for now it will work. Otherwise this will render content for null */}
       {isOpen && (
         <div className="flex flex-col md:flex-row">
-          <div className="md:w-2/3">
+          <div className="md:w-2/3 relative">
+            {isImageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+              </div>
+            )}
             <img
-              src={displayPost.imageUrl}
+              src={loadedImages?.get(displayPost.id) || displayPost.imageUrl}
               alt="post content"
-              className="w-full h-auto"
+              className={cn(
+                "w-full h-auto",
+                isImageLoading && "opacity-0" // Hide image while loading
+              )}
+              onLoad={() => setIsImageLoading(false)}
             />
           </div>
           <div className="md:w-1/3 p-6 border-l border-yellow-500/20">

@@ -1,6 +1,7 @@
 [build]
-  command = "go build -o myapp"
-  publish = "public"
+  command = "bun run build"  # Adjust based on your build script
+  publish = ".next"  # Adjust based on your Next.js output folder
 
 [context.production.environment]
-  GO_VERSION = "1.21.0"
+  BUN_VERSION = "1.0.0"  # Use the latest Bun version
+  NODE_VERSION = "20"  # Ensure compatibility

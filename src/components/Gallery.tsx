@@ -59,6 +59,7 @@ export function Gallery() {
   const [walletAddress, setWalletAddress] = useState('');
   const [votedPosts, setVotedPosts] = useState<Set<string>>(new Set());
   const [isVoting, setIsVoting] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Map<string, string>>(new Map());
 
   // Fetch voted posts only on initial load or wallet connect
   useEffect(() => {
@@ -297,6 +298,15 @@ export function Gallery() {
     setPosts(prev => [newPost, ...prev]);
   }, []);
 
+  // Add this function to handle image loading
+  const handleImageLoad = useCallback((postId: string, imageUrl: string) => {
+    setLoadedImages(prev => {
+      const newMap = new Map(prev);
+      newMap.set(postId, imageUrl);
+      return newMap;
+    });
+  }, []);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -402,6 +412,7 @@ export function Gallery() {
               onVoteClick={handleVoteClick}
               hasVoted={votedPosts.has(post.id)}
               isVoting={isVoting}
+              onImageLoad={handleImageLoad}
             />
           </div>
         ))}
@@ -436,6 +447,7 @@ export function Gallery() {
           onVoteClick={handleVoteClick}
           hasVoted={votedPosts.has(selectedPost.id)}
           isVoting={isVoting}
+          loadedImages={loadedImages}
         />
       )}
 

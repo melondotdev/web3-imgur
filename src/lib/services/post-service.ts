@@ -1,5 +1,5 @@
 export async function createPost(formData: FormData) {
-  const response = await fetch('/api/post', {
+  const response = await fetch('/api/posts', {
     method: 'POST',
     body: formData,
   });
