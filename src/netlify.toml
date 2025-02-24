@@ -1,0 +1,6 @@
+[build]
+  command = "go build -o myapp"
+  publish = "public"
+
+[context.production.environment]
+  GO_VERSION = "1.21.0"
