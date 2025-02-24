@@ -1,14 +1,17 @@
 import { Modal } from '@/components/base/Modal';
 import type { Post, Comment } from '@/lib/types/post';
 // import { ConnectButton, useWallet } from '@suiet/wallet-kit';
-import { useWallet } from "@solana/wallet-adapter-react";
-import { ArrowBigUp, Send } from 'lucide-react';
+import { ArrowBigUp, Send, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useVote } from '@/lib/hooks/useVote';
 import { cn } from '@/lib/utils/cn';
 import { trimUsername } from '@/lib/utils/trim-username';
+import { getSolscanUrl } from '@/lib/utils/solana';
+import { WalletContextState } from '@solana/wallet-adapter-react';
+import { toast } from 'react-hot-toast';
 
 interface PostModalProps {
+  wallet: WalletContextState;
   post: Post;
   comments: Comment[];
   isOpen: boolean;
@@ -18,6 +21,7 @@ interface PostModalProps {
 }
 
 export function PostModal({
+  wallet,
   post,
   comments,
   isOpen,
@@ -27,9 +31,15 @@ export function PostModal({
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
   const [localVotes, setLocalVotes] = useState(post.votes);
-  const { connected: isWalletConnected, signMessage, publicKey } = useWallet();
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
-  const { toggleVote, isVoting, hasVoted, error } = useVote(post.id);
+  const { toggleVote, isVoting, hasVoted, error, checkVoteStatus } = useVote(post.id);
+  
+  // Check initial vote status when component mounts or wallet connection changes
+  useEffect(() => {
+    if (wallet.connected) {
+      checkVoteStatus();
+    }
+  }, [wallet.connected, checkVoteStatus]);
   
   // Update localComments when comments prop changes
   useEffect(() => {
@@ -42,42 +52,39 @@ export function PostModal({
   }, [post.votes]);
   
   const handleVoteClick = async () => {
-    if (!isWalletConnected) {
-      console.log('Please connect your wallet to vote');
+    if (!wallet.connected) {
+      toast.error('Please connect your wallet to vote');
       return;
     }
     
     try {
-      // Update local vote count immediately for better UX
-      setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-      
       await toggleVote(post.id, localVotes, () => {
+        // Update local vote count only after successful vote
+        setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
         onVote(post.id);
       });
     } catch (error) {
-      // If the vote fails, revert the local count
-      setLocalVotes(post.votes);
       console.error('Vote failed:', error);
     }
   };
-
+  
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
-    if (!trimmed || !isWalletConnected || !signMessage || !publicKey) {
+    if (!trimmed || !wallet.connected || !wallet.signMessage || !wallet.publicKey) {
       return;
     }
-
+    
     try {
       // Convert the comment into bytes.
       const msgBytes = new TextEncoder().encode(trimmed);
       // Sign the message using the connected wallet.
-      const signature = await signMessage(msgBytes);
+      const signature = await wallet.signMessage(msgBytes);
       
       // Build a transient comment object.
       const newCommentObj: Comment = {
         id: Date.now().toString(),
-        author: publicKey.toString(),
+        author: wallet.publicKey.toString(),
         content: trimmed,
         createdAt: new Date().toISOString(),
         votes: 0
@@ -101,6 +108,10 @@ export function PostModal({
     }
   }
 
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       {/* FIXME Not ideal but for now it will work. Otherwise this will render content for null */}
@@ -115,18 +126,35 @@ export function PostModal({
           </div>
           <div className="md:w-1/3 p-6 border-l border-yellow-500/20">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-yellow-500/80">@{trimUsername(post.username)}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={getSolscanUrl(post.username)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-500/80 hover:text-yellow-500"
+                  title="View on Solscan"
+                >
+                  @{trimUsername(post.username)}
+                </a>
+                <button
+                  onClick={() => handleCopyAddress(post.username)}
+                  className="text-yellow-500/60 hover:text-yellow-500 p-1"
+                  title="Copy address"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
               <button
                 onClick={handleVoteClick}
                 disabled={isVoting}
                 className={cn(
                   "flex items-center space-x-2 text-yellow-500 hover:text-yellow-400",
                   isVoting && "opacity-50 cursor-not-allowed",
-                  !isWalletConnected && "opacity-50",
+                  !wallet.connected && "opacity-50",
                   hasVoted && "text-yellow-400"
                 )}
                 title={
-                  !isWalletConnected 
+                  !wallet.connected 
                     ? "Connect wallet to vote" 
                     : isVoting
                       ? "Processing..."
@@ -147,9 +175,24 @@ export function PostModal({
                   className="border-b border-yellow-500/10 pb-4"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-yellow-500/80">
-                      @{trimUsername(comment.author)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={getSolscanUrl(comment.author)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-yellow-500/80 hover:text-yellow-500"
+                        title="View on Solscan"
+                      >
+                        @{trimUsername(comment.author)}
+                      </a>
+                      <button
+                        onClick={() => handleCopyAddress(comment.author)}
+                        className="text-yellow-500/60 hover:text-yellow-500 p-1"
+                        title="Copy address"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
                     <span className="text-xs text-yellow-500/50">
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>

@@ -183,8 +183,9 @@ export function Gallery() {
     return <div>Loading...</div>;
   }
   
-  const handleVote = (postId: string) => {
-    console.log('Voting for post:', postId);
+  const handleVote = async (postId: string) => {
+    // Remove this console.log since we'll handle votes in the PostCard component
+    // The PostCard component will use the useVote hook directly
   };
   
   const handleComment = async (postId: string, content: string) => {
@@ -192,7 +193,7 @@ export function Gallery() {
       if (!wallet.publicKey) {
         throw new Error('Wallet not connected');
       }
-
+      
       await createComment(postId, {
         username: wallet.publicKey.toString(),
         text: content
@@ -272,7 +273,8 @@ export function Gallery() {
             <PostCard 
               post={post} 
               onClick={setSelectedPost} 
-              onVote={handleVote} 
+              onVote={handleVote}
+              isWalletConnected={wallet.connected}
             />
           </div>
         ))}
@@ -298,6 +300,7 @@ export function Gallery() {
       
       {selectedPost && (
         <PostModal
+          wallet={wallet}
           post={selectedPost}
           onVote={handleVote}
           comments={comments}

@@ -1,21 +1,29 @@
 import type { Post } from '@/lib/types/post';
-import { ArrowBigUp, MessageCircle } from 'lucide-react';
+import { ArrowBigUp, MessageCircle, Copy } from 'lucide-react';
 import { trimUsername } from '@/lib/utils/trim-username';
 import { useVote } from '@/lib/hooks/useVote';
 import { cn } from '@/lib/utils/cn';
 import { useState, useEffect } from 'react';
-import { useWallet } from "@solana/wallet-adapter-react";
+import { getSolscanUrl } from '@/lib/utils/solana';
+import { toast } from 'react-hot-toast';
 
 interface PostCardProps {
+  isWalletConnected: boolean;
   post: Post;
   onVote: (id: string) => void;
   onClick: (post: Post) => void;
 }
 
-export function PostCard({ post, onVote, onClick }: PostCardProps) {
-  const { connected: isWalletConnected } = useWallet();
-  const { toggleVote, isVoting, hasVoted, error } = useVote(post.id);
+export function PostCard({ isWalletConnected, post, onVote, onClick }: PostCardProps) {
+  const { toggleVote, isVoting, hasVoted, error, checkVoteStatus } = useVote(post.id);
   const [localVotes, setLocalVotes] = useState(post.votes);
+
+  // Check initial vote status when component mounts or wallet connection changes
+  useEffect(() => {
+    if (isWalletConnected) {
+      checkVoteStatus();
+    }
+  }, [isWalletConnected, checkVoteStatus]);
 
   // Update localVotes when post changes
   useEffect(() => {
@@ -25,22 +33,24 @@ export function PostCard({ post, onVote, onClick }: PostCardProps) {
   const handleVoteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isWalletConnected) {
-      console.log('Please connect your wallet to vote');
+      toast.error('Please connect your wallet to vote');
       return;
     }
     
     try {
-      // Update local vote count immediately for better UX
-      setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-      
       await toggleVote(post.id, localVotes, () => {
+        // Update local vote count only after successful vote
+        setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
         onVote(post.id);
       });
     } catch (error) {
-      // If the vote fails, revert the local count
-      setLocalVotes(post.votes);
       console.error('Vote failed:', error);
     }
+  };
+
+  const handleCopyAddress = (e: React.MouseEvent, address: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(address);
   };
 
   return (
@@ -55,7 +65,25 @@ export function PostCard({ post, onVote, onClick }: PostCardProps) {
           <h3 className="text-lg font-semibold text-white">{post.title}</h3>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-yellow-500/80">by</span>
-            <span className="text-yellow-500/80">@{trimUsername(post.username)}</span>
+            <div className="flex items-center gap-2">
+              <a
+                href={getSolscanUrl(post.username)}
+                onClick={(e) => e.stopPropagation()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-yellow-500/80 hover:text-yellow-500"
+                title="View on Solscan"
+              >
+                @{trimUsername(post.username)}
+              </a>
+              <button
+                onClick={(e) => handleCopyAddress(e, post.username)}
+                className="text-yellow-500/60 hover:text-yellow-500 p-1"
+                title="Copy address"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

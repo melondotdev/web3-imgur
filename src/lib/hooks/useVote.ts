@@ -1,72 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { incrementVote, removeVote, hasUserVoted } from '@/lib/services/db/upvote-service';
-import { useWallet } from '@suiet/wallet-kit';
+import { useWallet } from "@solana/wallet-adapter-react";
+import { toast } from 'react-hot-toast';
 
 export function useVote(postId: string) {
+  const wallet = useWallet();
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const wallet = useWallet();
 
-  // Check if user has voted when component mounts or wallet changes
-  useEffect(() => {
-    async function checkVoteStatus() {
-      if (wallet.connected && wallet.account?.address) {
-        try {
-          const voted = await hasUserVoted(postId, wallet.account.address);
-          setHasVoted(voted);
-        } catch (error) {
-          console.error('Failed to check vote status:', error);
-        }
-      }
+  // Check initial vote status
+  const checkVoteStatus = useCallback(async () => {
+    if (!wallet.publicKey) return;
+    try {
+      const voted = await hasUserVoted(postId, wallet.publicKey.toString());
+      setHasVoted(voted);
+    } catch (err) {
+      console.error('Failed to check vote status:', err);
+    }
+  }, [postId, wallet.publicKey]);
+
+  // Toggle vote
+  const toggleVote = async (postId: string, currentVotes: number, onSuccess?: () => void) => {
+    if (!wallet.publicKey || !wallet.signMessage) {
+      toast.error('Please connect your wallet to vote');
+      return;
     }
 
-    checkVoteStatus();
-  }, [postId, wallet.connected, wallet.account?.address]);
-
-  const toggleVote = async (postId: string, currentVotes: number, onSuccess?: () => void) => {
-    if (isVoting || !wallet.connected) return;
+    setIsVoting(true);
+    setError(null);
 
     try {
-      setIsVoting(true);
-      setError(null);
-
       if (hasVoted) {
-        // Remove vote
-        await removeVote(postId, wallet.account?.address || '');
-        setHasVoted(false);
+        await removeVote(postId, wallet.publicKey.toString());
       } else {
-        // Add vote
-        const message = `Vote for post: ${postId}`;
-        const msgBytes = new TextEncoder().encode(message);
+        // Create message to sign
+        const message = `Vote for post ${postId}`;
+        const messageBytes = new TextEncoder().encode(message);
+        const signature = await wallet.signMessage(messageBytes);
         
-        const { signature } = await wallet.signPersonalMessage({
-          message: msgBytes
-        });
-
         await incrementVote(
-          postId, 
-          signature,
-          wallet.account?.address || ''
+          postId,
+          Buffer.from(signature).toString('hex'),
+          wallet.publicKey.toString()
         );
-        setHasVoted(true);
       }
-      
-      onSuccess?.();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to vote';
-      setError(errorMessage);
-      console.error('Failed to vote:', error);
+
+      // Update state only after successful vote
+      setHasVoted(!hasVoted);
+      if (onSuccess) onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsVoting(false);
     }
   };
 
-  return { 
-    toggleVote, 
-    isVoting, 
+  return {
+    toggleVote,
+    isVoting,
     hasVoted,
     error,
-    isWalletConnected: wallet.connected 
+    checkVoteStatus
   };
 } 
