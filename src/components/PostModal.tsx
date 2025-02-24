@@ -16,7 +16,10 @@ interface PostModalProps {
   comments: Comment[];
   isOpen: boolean;
   onClose: () => void;
-  onComment?: (id: string, content: string) => void;
+  onComment?: (id: string, content: string) => Promise<Comment>;
+  onVoteClick: (postId: string, currentVotes: number) => Promise<void>;
+  hasVoted: boolean;
+  isVoting: boolean;
 }
 
 export function PostModal({
@@ -26,43 +29,20 @@ export function PostModal({
   isOpen,
   onClose,
   onComment,
+  onVoteClick,
+  hasVoted,
+  isVoting
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
-  const [localVotes, setLocalVotes] = useState(post.votes);
   const [localComments, setLocalComments] = useState<Comment[]>(comments);
-  const { toggleVote, isVoting, hasVoted, error, checkVoteStatus } = useVote(post.id);
-  
-  // Check initial vote status when component mounts or wallet connection changes
-  useEffect(() => {
-    if (wallet.connected) {
-      checkVoteStatus();
-    }
-  }, [wallet.connected, checkVoteStatus]);
   
   // Update localComments when comments prop changes
   useEffect(() => {
     setLocalComments(comments);
   }, [comments]);
   
-  // Update localVotes when post changes
-  useEffect(() => {
-    setLocalVotes(post.votes);
-  }, [post.votes]);
-  
   const handleVoteClick = async () => {
-    if (!wallet.connected) {
-      toast.error('Please connect your wallet to vote');
-      return;
-    }
-    
-    try {
-      await toggleVote(post.id, localVotes, () => {
-        // Update local vote count only after successful vote
-        setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-      });
-    } catch (error) {
-      console.error('Vote failed:', error);
-    }
+    await onVoteClick(post.id, post.votes);
   };
   
   async function handleSubmitComment(e: React.FormEvent) {
@@ -73,35 +53,31 @@ export function PostModal({
     }
     
     try {
-      // Convert the comment into bytes.
       const msgBytes = new TextEncoder().encode(trimmed);
-      // Sign the message using the connected wallet.
-      const signature = await wallet.signMessage(msgBytes);
-      
-      // Build a transient comment object.
-      const newCommentObj: Comment = {
-        id: Date.now().toString(),
-        author: wallet.publicKey.toString(),
-        content: trimmed,
-        createdAt: new Date().toISOString(),
-        votes: 0
-      };
+      await wallet.signMessage(msgBytes);
       
       if (onComment) {
-        try {
-          await onComment(post.id, trimmed);
-          // Update the UI immediately.
-          setLocalComments((prev) => [...prev, newCommentObj]);
-          setNewComment('');
-        } catch (error) {
-          console.error('Failed to submit comment:', error);
-          // Show error to user
-          alert('Failed to submit comment. Please try again.');
+        const newComment = await onComment(post.id, trimmed);
+        
+        // Verify the comment has all required fields
+        if (!newComment.id || !newComment.author || !newComment.content) {
+          throw new Error('Invalid comment data received');
         }
+        
+        // Update local comments with the verified comment
+        setLocalComments(prev => [...prev, {
+          id: newComment.id,
+          author: newComment.author,
+          content: newComment.content,
+          createdAt: newComment.createdAt || new Date().toISOString(),
+          votes: newComment.votes || 0
+        }]);
+        
+        setNewComment('');
       }
     } catch (error) {
-      console.error('Error signing comment:', error);
-      alert('Error signing comment. Please try again.');
+      console.error('Error:', error);
+      toast.error('Failed to submit comment');
     }
   }
 
@@ -161,7 +137,7 @@ export function PostModal({
                 }
               >
                 <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
-                <span>{localVotes}</span>
+                <span>{post.votes}</span>
               </button>
             </div>
             

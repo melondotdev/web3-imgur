@@ -37,35 +37,3 @@ export async function getAllPosts(
   // Map DB posts to view model
   return mapDbPostsToPosts(posts as DbPost[], postTags);
 }
-
-export function subscribeToAllPosts(
-  callback: (posts: Post[]) => void,
-  sortBy: PostSortOption,
-  onError?: (error: Error) => void,
-) {
-  const subscription = supabasePublicClient()
-    .channel('posts_channel')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'posts',
-      },
-      async () => {
-        try {
-          const posts = await getAllPosts(sortBy);
-          callback(posts);
-        } catch (error) {
-          onError?.(
-            error instanceof Error ? error : new Error('Unknown error'),
-          );
-        }
-      },
-    )
-    .subscribe();
-
-  return () => {
-    subscription.unsubscribe();
-  };
-}

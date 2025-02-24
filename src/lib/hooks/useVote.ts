@@ -3,7 +3,7 @@ import { incrementVote, removeVote, hasUserVoted } from '@/lib/services/db/upvot
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from 'react-hot-toast';
 
-export function useVote(postId: string) {
+export function useVote(postId: string, initialHasVoted: boolean) {
   const wallet = useWallet();
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);

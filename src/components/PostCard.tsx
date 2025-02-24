@@ -1,7 +1,6 @@
 import type { Post } from '@/lib/types/post';
 import { ArrowBigUp, MessageCircle, Copy } from 'lucide-react';
 import { trimUsername } from '@/lib/utils/trim-username';
-import { useVote } from '@/lib/hooks/useVote';
 import { cn } from '@/lib/utils/cn';
 import { useState, useEffect } from 'react';
 import { getSolscanUrl } from '@/lib/utils/solana';
@@ -11,39 +10,22 @@ interface PostCardProps {
   isWalletConnected: boolean;
   post: Post;
   onClick: (post: Post) => void;
+  onVoteClick: (postId: string, currentVotes: number) => Promise<void>;
+  hasVoted: boolean;
+  isVoting: boolean;
 }
 
-export function PostCard({ isWalletConnected, post, onClick }: PostCardProps) {
-  const { toggleVote, isVoting, hasVoted, error, checkVoteStatus } = useVote(post.id);
-  const [localVotes, setLocalVotes] = useState(post.votes);
-
-  // Check initial vote status when component mounts or wallet connection changes
-  useEffect(() => {
-    if (isWalletConnected) {
-      checkVoteStatus();
-    }
-  }, [isWalletConnected, checkVoteStatus]);
-
-  // Update localVotes when post changes
-  useEffect(() => {
-    setLocalVotes(post.votes);
-  }, [post.votes]);
-
+export function PostCard({ 
+  isWalletConnected, 
+  post, 
+  onClick, 
+  onVoteClick,
+  hasVoted,
+  isVoting 
+}: PostCardProps) {
   const handleVoteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isWalletConnected) {
-      toast.error('Please connect your wallet to vote');
-      return;
-    }
-    
-    try {
-      await toggleVote(post.id, localVotes, () => {
-        // Update local vote count only after successful vote
-        setLocalVotes(prev => hasVoted ? prev - 1 : prev + 1);
-      });
-    } catch (error) {
-      console.error('Vote failed:', error);
-    }
+    await onVoteClick(post.id, post.votes);
   };
 
   const handleCopyAddress = (e: React.MouseEvent, address: string) => {
@@ -122,7 +104,7 @@ export function PostCard({ isWalletConnected, post, onClick }: PostCardProps) {
               }
             >
               <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
-              <span>{localVotes}</span>
+              <span>{post.votes}</span>
             </button>
           </div>
         </div>

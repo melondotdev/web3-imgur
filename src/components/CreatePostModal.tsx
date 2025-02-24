@@ -12,17 +12,19 @@ import {
   SEPARATORS,
   type Tag,
 } from 'react-tag-input';
-
+import { Post } from '@/lib/types/post';
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   walletAddress: string;
+  onPostCreated?: (newPost: Post) => void;
 }
 
 export function CreatePostModal({
   isOpen,
   onClose,
   walletAddress,
+  onPostCreated,
 }: CreatePostModalProps) {
   const [preview, setPreview] = useState('');
   const [tags, setTags] = useState<Tag[]>([]);
@@ -44,15 +46,17 @@ export function CreatePostModal({
       const file =
         data.image instanceof FileList ? data.image[0] : (data.image as File);
 
-      // Create FormData and append fields
       const formData = new FormData();
       formData.append('title', data.title);
       formData.append('username', data.username);
       formData.append('image', file);
-      // Stringify the tags array before appending
       formData.append('tags', JSON.stringify(tags.map(tag => tag.text)));
 
-      await createPost(formData);
+      const newPost = await createPost(formData);
+      
+      if (onPostCreated) {
+        onPostCreated(newPost);
+      }
       
       reset();
       setPreview('');
@@ -77,7 +81,7 @@ export function CreatePostModal({
     resetField('image');
     setPreview('');
   };
-
+  
   useEffect(() => {
     // For debugging
     console.log('Setting tags:', tags.map(tag => tag.text));

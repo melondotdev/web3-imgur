@@ -1,6 +1,5 @@
 import {
   getAllPosts,
-  subscribeToAllPosts,
   PostSortOption,
 } from '@/lib/services/db/get-all-posts';
 import { getComments } from '@/lib/services/db/get-comments';
@@ -13,6 +12,8 @@ import { createComment } from '@/lib/services/comment-service';
 // import { useWallet } from '@suiet/wallet-kit';
 import { useWallet } from "@solana/wallet-adapter-react";
 import styles from './Gallery.module.css';
+import { CreatePostModal } from './CreatePostModal';
+import { incrementVote, removeVote, hasUserVoted } from '@/lib/services/db/upvote-service';
 
 interface TagCount {
   tag: string;
@@ -54,8 +55,43 @@ export function Gallery() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [tagSearch, setTagSearch] = useState('');
   const [scrollLoadingEnabled, setScrollLoadingEnabled] = useState(false);
-  
-  // Function to load posts
+  const [isOpen, setIsOpen] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [votedPosts, setVotedPosts] = useState<Set<string>>(new Set());
+  const [isVoting, setIsVoting] = useState(false);
+
+  // Fetch voted posts only on initial load or wallet connect
+  useEffect(() => {
+    if (wallet.connected && wallet.publicKey) {
+      fetchVotedPosts();
+    }
+  }, [wallet.connected, wallet.publicKey]); // Remove posts dependency
+
+  // Update fetchVotedPosts to not depend on posts
+  const fetchVotedPosts = useCallback(async () => {
+    if (!wallet.connected || !wallet.publicKey) return;
+    
+    try {
+      const votedPostsPromises = posts.map(post => 
+        hasUserVoted(post.id, wallet.publicKey!.toString())
+      );
+      
+      const votedResults = await Promise.all(votedPostsPromises);
+      
+      const newVotedPosts = new Set<string>();
+      posts.forEach((post, index) => {
+        if (votedResults[index]) {
+          newVotedPosts.add(post.id);
+        }
+      });
+      
+      setVotedPosts(newVotedPosts);
+    } catch (error) {
+      console.error('Failed to fetch voted posts:', error);
+    }
+  }, [wallet.connected, wallet.publicKey]); // Remove posts dependency
+
+  // Update loadPosts to not fetch votes
   const loadPosts = useCallback(async (pageNum: number, replace: boolean = false) => {
     if (loadingRef.current) return;
     
@@ -63,7 +99,6 @@ export function Gallery() {
     setLoading(true);
 
     try {
-      // Only fetch from server if not filtering by tag
       if (!selectedTag) {
         const newPosts = await getAllPosts(sortBy, pageNum);
         
@@ -82,26 +117,88 @@ export function Gallery() {
     }
   }, [sortBy, selectedTag]);
 
-  // Initial load and sort change handler
+  // Update the useEffect to fetch votes after initial posts load
+  useEffect(() => {
+    if (wallet.connected && wallet.publicKey && posts.length > 0) {
+      fetchVotedPosts();
+    }
+  }, [wallet.connected, wallet.publicKey, posts.length]); // Only depend on posts.length
+
+  // Handle voting at the Gallery level
+  const handleVoteClick = useCallback(async (postId: string, currentVotes: number) => {
+    if (!wallet.connected || !wallet.publicKey || !wallet.signMessage) {
+      toast.error('Please connect your wallet to vote');
+      return;
+    }
+
+    if (isVoting) return;
+
+    try {
+      setIsVoting(true);
+      const hasVoted = votedPosts.has(postId);
+      const newVoteCount = hasVoted ? currentVotes - 1 : currentVotes + 1;
+
+      // Store original states for rollback
+      const originalVotedPosts = new Set(votedPosts);
+      const originalPosts = [...posts];
+      const originalSelectedPost = selectedPost;
+
+      // Update all local state immediately
+      setVotedPosts(prev => {
+        const newSet = new Set(prev);
+        if (hasVoted) {
+          newSet.delete(postId);
+        } else {
+          newSet.add(postId);
+        }
+        return newSet;
+      });
+
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { ...post, votes: newVoteCount }
+            : post
+        )
+      );
+
+      if (selectedPost?.id === postId) {
+        setSelectedPost(prev => 
+          prev ? { ...prev, votes: newVoteCount } : null
+        );
+      }
+
+      // Update database
+      try {
+        if (!hasVoted) {
+          const message = new TextEncoder().encode(`Vote for post: ${postId}`);
+          const signature = await wallet.signMessage(message);
+          const signatureString = Buffer.from(signature).toString('base64');
+          await incrementVote(postId, signatureString, wallet.publicKey.toString());
+        } else {
+          await removeVote(postId, wallet.publicKey.toString());
+        }
+      } catch (error) {
+        // Rollback all state on error
+        setVotedPosts(originalVotedPosts);
+        setPosts(originalPosts);
+        setSelectedPost(originalSelectedPost);
+        throw error; // Re-throw to be caught by outer catch
+      }
+
+    } catch (error) {
+      console.error('Vote failed:', error);
+      toast.error('Failed to update vote');
+    } finally {
+      setIsVoting(false);
+    }
+  }, [wallet, isVoting, votedPosts, posts, selectedPost]);
+
+  // Load initial posts when sort changes
   useEffect(() => {
     setPage(0);
     setHasMore(true);
     loadPosts(0, true);
-    
-    // Subscribe to changes
-    const unsubscribe = subscribeToAllPosts(
-      async () => {
-        // Reload current page when data changes
-        await loadPosts(0, true);
-      },
-      sortBy,
-      (error) => {
-        console.error('Subscription error:', error);
-        toast.error('Failed to update posts');
-      },
-    );
-
-    return unsubscribe;
   }, [sortBy, loadPosts]);
 
   // Load comments when a post is selected
@@ -180,6 +277,11 @@ export function Gallery() {
     setScrollLoadingEnabled(true);
   }, [loadPosts, page]);
 
+  // Add handler for new posts
+  const handleNewPost = useCallback((newPost: Post) => {
+    setPosts(prev => [newPost, ...prev]);
+  }, []);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -190,17 +292,29 @@ export function Gallery() {
         throw new Error('Wallet not connected');
       }
       
-      await createComment(postId, {
+      const newComment = await createComment(postId, {
         username: wallet.publicKey.toString(),
         text: content
       });
       
-      // Refresh comments after posting
-      const updatedComments = await getComments(postId);
-      setComments(updatedComments);
+      // Create a properly structured comment object
+      const formattedComment: Comment = {
+        id: newComment.id,
+        author: newComment.author || wallet.publicKey.toString(),
+        content: newComment.content || content,
+        createdAt: newComment.createdAt || new Date().toISOString(),
+        votes: newComment.votes || 0
+      };
+      
+      // Update comments locally with the formatted comment
+      setComments(prev => [...prev, formattedComment]);
+      
+      // Return the formatted comment
+      return formattedComment;
     } catch (error) {
       console.error('Failed to create comment:', error);
       toast.error('Failed to post comment');
+      throw error;
     }
   };
 
@@ -270,6 +384,9 @@ export function Gallery() {
               post={post} 
               onClick={setSelectedPost}
               isWalletConnected={wallet.connected}
+              onVoteClick={handleVoteClick}
+              hasVoted={votedPosts.has(post.id)}
+              isVoting={isVoting}
             />
           </div>
         ))}
@@ -301,8 +418,21 @@ export function Gallery() {
           isOpen={true}
           onClose={() => setSelectedPost(null)}
           onComment={handleComment}
+          onVoteClick={handleVoteClick}
+          hasVoted={votedPosts.has(selectedPost.id)}
+          isVoting={isVoting}
         />
       )}
+
+      <CreatePostModal
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false);
+          setWalletAddress('');
+        }}
+        walletAddress={walletAddress}
+        onPostCreated={handleNewPost}
+      />
     </>
   );
 }
