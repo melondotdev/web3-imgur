@@ -11,6 +11,7 @@ export async function POST(
   try {
     const { postId } = params;
     const body = await request.json();
+    console.log('Request body:', body); // Debug log
     
     // Use our existing validation
     const validatedData = validateCreateCommentRequest(body);
@@ -22,18 +23,21 @@ export async function POST(
       content: validatedData.text,
     });
     
-    return NextResponse.json(
-      {
-        comment: {
-          id: commentData.id,
-          author: commentData.author,
-          content: commentData.content,
-          createdAt: commentData.created_at,
-          votes: commentData.votes,
-        }
-      },
-      { status: 201 }
-    );
+    console.log('DB Comment data:', commentData); // Debug log
+
+    const response = {
+      comment: {
+        id: commentData.id,
+        author: commentData.author,
+        content: commentData.content,
+        created_at: commentData.created_at, // Note: using snake_case as per DB
+        votes: commentData.votes || 0,
+      }
+    };
+
+    console.log('Response data:', response); // Debug log
+    
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating comment:', error);
     return NextResponse.json(

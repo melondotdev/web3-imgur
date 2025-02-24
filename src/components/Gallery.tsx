@@ -63,23 +63,23 @@ export function Gallery() {
   // Fetch voted posts only on initial load or wallet connect
   useEffect(() => {
     if (wallet.connected && wallet.publicKey) {
-      fetchVotedPosts();
+      fetchVotedPosts(posts);
     }
-  }, [wallet.connected, wallet.publicKey]); // Remove posts dependency
+  }, [wallet.connected, wallet.publicKey, posts]);
 
-  // Update fetchVotedPosts to not depend on posts
-  const fetchVotedPosts = useCallback(async () => {
+  // Update fetchVotedPosts to accept posts as a parameter
+  const fetchVotedPosts = useCallback(async (postsToCheck: Post[]) => {
     if (!wallet.connected || !wallet.publicKey) return;
     
     try {
-      const votedPostsPromises = posts.map(post => 
+      const votedPostsPromises = postsToCheck.map(post => 
         hasUserVoted(post.id, wallet.publicKey!.toString())
       );
       
       const votedResults = await Promise.all(votedPostsPromises);
       
       const newVotedPosts = new Set<string>();
-      posts.forEach((post, index) => {
+      postsToCheck.forEach((post, index) => {
         if (votedResults[index]) {
           newVotedPosts.add(post.id);
         }
@@ -89,9 +89,9 @@ export function Gallery() {
     } catch (error) {
       console.error('Failed to fetch voted posts:', error);
     }
-  }, [wallet.connected, wallet.publicKey]); // Remove posts dependency
+  }, [wallet.connected, wallet.publicKey]);
 
-  // Update loadPosts to not fetch votes
+  // Update loadPosts to fetch votes after loading posts
   const loadPosts = useCallback(async (pageNum: number, replace: boolean = false) => {
     if (loadingRef.current) return;
     
@@ -105,7 +105,14 @@ export function Gallery() {
         if (newPosts.length === 0) {
           setHasMore(false);
         } else {
-          setPosts(prev => replace ? newPosts : [...prev, ...newPosts]);
+          setPosts(prev => {
+            const updatedPosts = replace ? newPosts : [...prev, ...newPosts];
+            // Fetch votes for the new posts if wallet is connected
+            if (wallet.connected && wallet.publicKey) {
+              fetchVotedPosts(updatedPosts);
+            }
+            return updatedPosts;
+          });
         }
       }
     } catch (error) {
@@ -115,14 +122,14 @@ export function Gallery() {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [sortBy, selectedTag]);
+  }, [sortBy, selectedTag, wallet.connected, wallet.publicKey, fetchVotedPosts]);
 
-  // Update the useEffect to fetch votes after initial posts load
+  // Update the useEffect to fetch votes when wallet connects
   useEffect(() => {
     if (wallet.connected && wallet.publicKey && posts.length > 0) {
-      fetchVotedPosts();
+      fetchVotedPosts(posts);
     }
-  }, [wallet.connected, wallet.publicKey, posts.length]); // Only depend on posts.length
+  }, [wallet.connected, wallet.publicKey, posts, fetchVotedPosts]);
 
   // Handle voting at the Gallery level
   const handleVoteClick = useCallback(async (postId: string, currentVotes: number) => {
@@ -132,63 +139,71 @@ export function Gallery() {
     }
 
     if (isVoting) return;
-
+    
     try {
       setIsVoting(true);
-      const hasVoted = votedPosts.has(postId);
-      const newVoteCount = hasVoted ? currentVotes - 1 : currentVotes + 1;
+      const isCurrentlyVoted = votedPosts.has(postId);
+      const newVoteCount = isCurrentlyVoted ? currentVotes - 1 : currentVotes + 1;
 
       // Store original states for rollback
       const originalVotedPosts = new Set(votedPosts);
       const originalPosts = [...posts];
       const originalSelectedPost = selectedPost;
 
-      // Update all local state immediately
-      setVotedPosts(prev => {
-        const newSet = new Set(prev);
-        if (hasVoted) {
-          newSet.delete(postId);
-        } else {
-          newSet.add(postId);
-        }
-        return newSet;
-      });
-
-      setPosts(prevPosts => 
-        prevPosts.map(post => 
-          post.id === postId 
-            ? { ...post, votes: newVoteCount }
-            : post
-        )
-      );
-
-      if (selectedPost?.id === postId) {
-        setSelectedPost(prev => 
-          prev ? { ...prev, votes: newVoteCount } : null
-        );
-      }
-
-      // Update database
       try {
-        if (!hasVoted) {
+        // Make API call first
+        if (!isCurrentlyVoted) {
+          // Add vote
           const message = new TextEncoder().encode(`Vote for post: ${postId}`);
           const signature = await wallet.signMessage(message);
           const signatureString = Buffer.from(signature).toString('base64');
           await incrementVote(postId, signatureString, wallet.publicKey.toString());
+          // Update voted posts set after successful API call
+          setVotedPosts(prev => {
+            const newSet = new Set(prev);
+            newSet.add(postId);
+            return newSet;
+          });
         } else {
+          // Remove vote
           await removeVote(postId, wallet.publicKey.toString());
+          // Update voted posts set after successful API call
+          setVotedPosts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(postId);
+            return newSet;
+          });
         }
+
+        // Update post vote counts after successful API call
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post.id === postId 
+              ? { ...post, votes: newVoteCount }
+              : post
+          )
+        );
+
+        if (selectedPost?.id === postId) {
+          setSelectedPost(prev => 
+            prev ? { ...prev, votes: newVoteCount } : null
+          );
+        }
+
       } catch (error) {
         // Rollback all state on error
         setVotedPosts(originalVotedPosts);
         setPosts(originalPosts);
         setSelectedPost(originalSelectedPost);
-        throw error; // Re-throw to be caught by outer catch
+        
+        // Show appropriate error message
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error('Failed to update vote');
+        }
       }
 
-    } catch (error) {
-      console.error('Vote failed:', error);
-      toast.error('Failed to update vote');
     } finally {
       setIsVoting(false);
     }
@@ -277,9 +292,12 @@ export function Gallery() {
     setScrollLoadingEnabled(true);
   }, [loadPosts, page]);
 
-  // Add handler for new posts
+  // Simplify handleNewPost to just reload the page
   const handleNewPost = useCallback((newPost: Post) => {
-    setPosts(prev => [newPost, ...prev]);
+    // Show success message
+    toast.success('Post created successfully!');
+    // Reload the page
+    window.location.reload();
   }, []);
 
   if (loading) {

@@ -57,27 +57,35 @@ export function PostModal({
       await wallet.signMessage(msgBytes);
       
       if (onComment) {
-        const newComment = await onComment(post.id, trimmed);
+        const response = await onComment(post.id, trimmed);
+        console.log('Comment response:', response); // Debug log
         
-        // Verify the comment has all required fields
+        if (!response) {
+          throw new Error('No response received from comment creation');
+        }
+
+        // Create a new comment object with strict type checking
+        const newComment: Comment = {
+          id: response.id,
+          author: response.author || wallet.publicKey.toString(),
+          content: response.content || trimmed,
+          createdAt: response.createdAt || new Date().toISOString(),
+          votes: typeof response.votes === 'number' ? response.votes : 0
+        };
+
+        // Validate the new comment object
         if (!newComment.id || !newComment.author || !newComment.content) {
+          console.error('Invalid comment data:', newComment); // Debug log
           throw new Error('Invalid comment data received');
         }
         
-        // Update local comments with the verified comment
-        setLocalComments(prev => [...prev, {
-          id: newComment.id,
-          author: newComment.author,
-          content: newComment.content,
-          createdAt: newComment.createdAt || new Date().toISOString(),
-          votes: newComment.votes || 0
-        }]);
-        
+        // Update local comments
+        setLocalComments(prev => [...prev, newComment]);
         setNewComment('');
       }
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to submit comment');
+      console.error('Error creating comment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to submit comment');
     }
   }
 
@@ -144,7 +152,7 @@ export function PostModal({
             <div className="space-y-4 mb-6 max-h-[50vh] overflow-y-auto">
               {localComments.map((comment) => (
                 <div
-                  key={comment.id}
+                  key={`${comment.id}-${comment.author}`}
                   className="border-b border-yellow-500/10 pb-4"
                 >
                   <div className="flex justify-between items-start mb-2">

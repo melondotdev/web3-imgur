@@ -18,6 +18,7 @@ export async function createComment(
   });
 
   const responseData = await response.json();
+  console.log('API Response:', responseData); // Debug log
 
   if (!response.ok) {
     const error = responseData as ApiError;
@@ -28,5 +29,29 @@ export async function createComment(
     );
   }
 
-  return responseData as CreateCommentResponse;
+  // Extract the comment data from the response
+  const commentData = responseData.comment;
+  console.log('Comment Data:', commentData); // Debug log
+
+  if (!commentData) {
+    console.error('No comment data in response:', responseData);
+    throw new Error('No comment data received from server');
+  }
+
+  // Ensure the response matches our expected type
+  const comment: CreateCommentResponse = {
+    id: commentData.id,
+    author: commentData.author,
+    content: commentData.content || data.text,
+    createdAt: commentData.created_at || new Date().toISOString(), // Note: changed from createdAt to created_at
+    votes: commentData.votes || 0
+  };
+
+  // Validate the required fields
+  if (!comment.id || !comment.author || !comment.content) {
+    console.error('Invalid comment data:', comment);
+    throw new Error('Invalid comment data received from server');
+  }
+
+  return comment;
 }
