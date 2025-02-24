@@ -22,15 +22,16 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const validatedData = validateCreatePostRequest(formData);
 
-    const file = validatedData.image as FileWithArrayBuffer;
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Handle the image as a Blob/File-like object
+    const imageFile = validatedData.image;
+    const buffer = Buffer.from(await imageFile.arrayBuffer());
 
     // Upload image to Tusky
     const imageUrl = await uploadImage({
       buffer,
-      filename: file.name,
-      mimetype: file.type,
-      size: file.size,
+      filename: imageFile.name,
+      mimetype: imageFile.type,
+      size: imageFile.size,
     });
 
     // Extract image ID from URL
