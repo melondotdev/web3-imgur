@@ -12,7 +12,7 @@ getClientEnv();
 
 export const metadata: Metadata = {
   title: 'bork.hub',
-  description: 'bork.hub',
+  description: 'bork.hub is where memecoin communities grow. currently in open beta.',
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
