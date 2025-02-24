@@ -1,22 +1,22 @@
 import { supabasePublicClient } from '@/lib/config/supabase';
 
-export async function incrementVote(postId: string, signature: string, address: string): Promise<void> {
+export async function incrementCommentVote(commentId: string, signature: string, address: string): Promise<void> {
   // First check if user has already voted
   const { data: existingVote } = await supabasePublicClient()
-    .from('post_votes')
+    .from('comment_votes')
     .select()
-    .eq('post_id', postId)
+    .eq('comment_id', commentId)
     .eq('voter_address', address)
     .single();
 
   if (existingVote) {
-    throw new Error('You have already voted for this post');
+    throw new Error('You have already voted for this comment');
   }
 
   // Start a transaction to create vote record and increment count
   const { error } = await supabasePublicClient()
-    .rpc('create_vote', {
-      post_id: postId,
+    .rpc('create_comment_vote', {
+      comment_id: commentId,
       voter_signature: signature,
       voter_address: address
     });
@@ -26,10 +26,10 @@ export async function incrementVote(postId: string, signature: string, address: 
   }
 }
 
-export async function removeVote(postId: string, address: string): Promise<void> {
+export async function removeCommentVote(commentId: string, address: string): Promise<void> {
   const { error } = await supabasePublicClient()
-    .rpc('remove_vote', {
-      post_id: postId,
+    .rpc('remove_comment_vote', {
+      comment_id: commentId,
       voter_address: address
     });
   
@@ -38,14 +38,13 @@ export async function removeVote(postId: string, address: string): Promise<void>
   }
 }
 
-// Optional: Add function to check if user has voted
-export async function hasUserVoted(postId: string, address: string): Promise<boolean> {
+export async function hasUserVotedComment(commentId: string, address: string): Promise<boolean> {
   const { data } = await supabasePublicClient()
-    .from('post_votes')
+    .from('comment_votes')
     .select()
-    .eq('post_id', postId)
+    .eq('comment_id', commentId)
     .eq('voter_address', address)
     .single();
-  
+
   return !!data;
-}
+} 

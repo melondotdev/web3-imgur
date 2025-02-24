@@ -292,12 +292,9 @@ export function Gallery() {
     setScrollLoadingEnabled(true);
   }, [loadPosts, page]);
 
-  // Simplify handleNewPost to just reload the page
+  // Add handler for new posts
   const handleNewPost = useCallback((newPost: Post) => {
-    // Show success message
-    toast.success('Post created successfully!');
-    // Reload the page
-    window.location.reload();
+    setPosts(prev => [newPost, ...prev]);
   }, []);
 
   if (loading) {
