@@ -8,13 +8,21 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
 
+// Add explicit File type for Node.js environment
+type FileWithArrayBuffer = {
+  arrayBuffer(): Promise<ArrayBuffer>;
+  name: string;
+  type: string;
+  size: number;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const env = getEnv();
     const formData = await request.formData();
     const validatedData = validateCreatePostRequest(formData);
 
-    const file = validatedData.image;
+    const file = validatedData.image as FileWithArrayBuffer;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Upload image to Tusky
