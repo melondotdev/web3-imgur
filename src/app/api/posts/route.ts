@@ -8,30 +8,30 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
 
-// Add explicit File type for Node.js environment
-type FileWithArrayBuffer = {
-  arrayBuffer(): Promise<ArrayBuffer>;
-  name: string;
-  type: string;
-  size: number;
-};
-
 export async function POST(request: NextRequest) {
   try {
     const env = getEnv();
     const formData = await request.formData();
     const validatedData = validateCreatePostRequest(formData);
 
-    // Handle the image as a Blob/File-like object
-    const imageFile = validatedData.image;
-    const buffer = Buffer.from(await imageFile.arrayBuffer());
+    // Get the image from form data and treat it as a Blob
+    const image = validatedData.image;
+    
+    // Safely access properties that exist in both Node.js and browser environments
+    const arrayBuffer = await image.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const imageProperties = {
+      name: String(image.name || ''),
+      type: String(image.type || 'application/octet-stream'),
+      size: Number(image.size || 0)
+    };
 
     // Upload image to Tusky
     const imageUrl = await uploadImage({
       buffer,
-      filename: imageFile.name,
-      mimetype: imageFile.type,
-      size: imageFile.size,
+      filename: imageProperties.name,
+      mimetype: imageProperties.type,
+      size: imageProperties.size,
     });
 
     // Extract image ID from URL
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         title: post.title,
         createdAt: post.created_at,
         imageUrl,
-        tags: tags.map(tag => tag.name), // Map tag objects to tag names
+        tags: tags.map(tag => tag.name),
         votes: 0,
       },
     };
