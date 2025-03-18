@@ -1,12 +1,6 @@
 import { getEnv } from '@/lib/config/env';
 import { Upload } from 'tus-js-client';
-
-type UploadInput = {
-  buffer: Buffer;
-  filename: string;
-  mimetype: string;
-  size: number;
-};
+import type { UploadInput } from '../types/upload';
 
 export function uploadImage(image: UploadInput): Promise<string> {
   return new Promise((resolve, reject) => {
