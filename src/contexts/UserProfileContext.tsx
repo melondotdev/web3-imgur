@@ -35,12 +35,18 @@ export function UserProfileProvider({
   // Get the public client instance - this is safe to use on the client side
   const supabase = supabasePublicClient();
 
+  // Handle wallet connection/disconnection
   useEffect(() => {
-    if (connected && publicKey) {
-      loadProfile(publicKey);
-    } else {
-      setProfile(null);
-    }
+    const handleConnectionChange = async () => {
+      if (connected && publicKey) {
+        await loadProfile(publicKey);
+      } else {
+        // Sign out of Supabase when wallet disconnects
+        await signOut();
+      }
+    };
+
+    handleConnectionChange();
   }, [connected, publicKey]);
 
   const loadProfile = async (publicKey: PublicKey) => {
@@ -147,8 +153,13 @@ export function UserProfileProvider({
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Error signing out:', err);
+    } finally {
+      setProfile(null);
+    }
   };
 
   return (

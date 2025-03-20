@@ -19,7 +19,7 @@ export async function createPostTag(
     })
     .select()
     .single();
-  
+
   if (error) {
     throw new Error(`Failed to create post tag: ${error.message}`);
   }
@@ -80,7 +80,7 @@ export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
   if (error) {
     throw new Error(`Failed to fetch post tags: ${error.message}`);
   }
-  
+
   // Group tags by post_id
   return data.reduce(
     (acc, { post_id, tag }) => {
@@ -97,7 +97,7 @@ export async function getAllPostTags(): Promise<Record<string, DbTag[]>> {
 export async function getPostsByTag(
   tagName: string,
   sortBy: PostSortOption = 'newest',
-  page: number = 0
+  page = 0,
 ): Promise<Post[]> {
   // Get posts that have this tag using proper joins
   const query = supabasePublicClient()
@@ -121,14 +121,14 @@ export async function getPostsByTag(
   } else {
     query.order('posts(created_at)', { ascending: false });
   }
-  
+
   const { data, error } = await query;
 
   if (error) {
     throw new Error(`Failed to fetch posts by tag: ${error.message}`);
   }
 
-  const allPosts = (data?.[0]?.posts || []).map(post => ({
+  const allPosts = (data?.[0]?.posts || []).map((post) => ({
     id: post.id,
     title: post.title,
     description: post.description,
@@ -136,7 +136,7 @@ export async function getPostsByTag(
     createdAt: post.created_at,
     username: post.username,
     votes: post.votes,
-    tags: [tagName]
+    tags: [tagName],
   })) as Post[];
 
   // Return empty array if we've gone past the end of available posts

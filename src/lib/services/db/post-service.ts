@@ -11,8 +11,15 @@ type CreatePostParams = {
 };
 
 export async function createPost(params: CreatePostParams): Promise<DbPost> {
+  const supabase = supabaseClient();
+  if (!supabase) {
+    throw new Error(
+      'Server-side Supabase client is required for post creation',
+    );
+  }
+
   // Start a Supabase transaction
-  const { data: post, error: postError } = await supabaseClient()
+  const { data: post, error: postError } = await supabase
     .from('posts')
     .insert({
       username: params.author,
@@ -30,6 +37,8 @@ export async function createPost(params: CreatePostParams): Promise<DbPost> {
     throw new Error('Failed to create post: No data returned');
   }
 
+  const typedPost = post as DbPost;
+
   // Create or get existing tags
   if (params.tags.length > 0) {
     try {
@@ -37,7 +46,7 @@ export async function createPost(params: CreatePostParams): Promise<DbPost> {
 
       // Link tags to the post
       await createPostTags(
-        post.id,
+        typedPost.id,
         tags.map((tag) => tag.id),
       );
     } catch (error) {
@@ -46,7 +55,7 @@ export async function createPost(params: CreatePostParams): Promise<DbPost> {
     }
   }
 
-  return post as DbPost;
+  return typedPost;
 }
 
 export async function getPostWithTags(postId: string): Promise<DbPost> {

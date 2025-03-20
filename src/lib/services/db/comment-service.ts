@@ -7,8 +7,17 @@ type CreateCommentParams = {
   content: string;
 };
 
-export async function createComment(params: CreateCommentParams): Promise<DbPostComment> {
-  const { data: comment, error: commentError } = await supabaseClient()
+export async function createComment(
+  params: CreateCommentParams,
+): Promise<DbPostComment> {
+  const supabase = supabaseClient();
+  if (!supabase) {
+    throw new Error(
+      'Server-side Supabase client is required for comment creation',
+    );
+  }
+
+  const { data: comment, error: commentError } = await supabase
     .from('comments')
     .insert({
       post_id: params.postId,

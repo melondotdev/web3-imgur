@@ -14,19 +14,19 @@ let supabaseServerInstance: ReturnType<typeof createClient> | null = null;
 
 export function supabaseClient() {
   // Only create server instance if we're on the server side
-  if (typeof window === 'undefined' && !supabaseServerInstance) {
-    const serverEnv = getServerEnv();
-    supabaseServerInstance = createClient(
-      serverEnv.NEXT_PUBLIC_SUPABASE_URL,
-      serverEnv.SUPABASE_SERVICE_ROLE_KEY,
-    );
+  if (typeof window === 'undefined') {
+    if (!supabaseServerInstance) {
+      const serverEnv = getServerEnv();
+      supabaseServerInstance = createClient(
+        serverEnv.NEXT_PUBLIC_SUPABASE_URL,
+        serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+      );
+    }
+    return supabaseServerInstance;
   }
-  if (!supabaseServerInstance && typeof window !== 'undefined') {
-    throw new Error(
-      'Attempted to use server-side Supabase client on the client side',
-    );
-  }
-  return supabaseServerInstance;
+  throw new Error(
+    'Attempted to use server-side Supabase client on the client side',
+  );
 }
 
 export function supabasePublicClient() {

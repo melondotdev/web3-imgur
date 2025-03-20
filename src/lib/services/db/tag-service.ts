@@ -15,11 +15,12 @@ export async function getAllTags(): Promise<{ tag: string; count: number }[]> {
   }
 
   // Transform the data into the required format
-  return data.map(tag => ({
-    tag: tag.name,
-    count: tag.post_tags?.length || 0
-  }))
-  .sort((a, b) => b.count - a.count);
+  return data
+    .map((tag) => ({
+      tag: tag.name,
+      count: tag.post_tags?.length || 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 }
 
 export async function createPostTag(name: string): Promise<DbTag> {
@@ -29,7 +30,7 @@ export async function createPostTag(name: string): Promise<DbTag> {
     .select('*')
     .eq('name', name)
     .single();
-  
+
   if (existingTag) {
     return existingTag as DbTag;
   }
@@ -40,7 +41,7 @@ export async function createPostTag(name: string): Promise<DbTag> {
     .insert({ name })
     .select()
     .single();
-  
+
   if (error) {
     throw new Error(`Failed to create tag: ${error.message}`);
   }
