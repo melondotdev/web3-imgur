@@ -36,7 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
+    // Get the server-side Supabase client
     const supabase = supabaseClient();
+    if (!supabase) {
+      throw new Error('Failed to initialize Supabase client');
+    }
 
     // Check if user exists
     let { data: user, error: fetchError } = await supabase

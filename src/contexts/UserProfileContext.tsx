@@ -2,7 +2,7 @@ import { supabasePublicClient } from '@/lib/config/supabase';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 interface UserProfile {
   publicKey: PublicKey | null;
@@ -32,8 +32,8 @@ export function UserProfileProvider({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Create a memoized instance of the Supabase client
-  const supabase = useMemo(() => supabasePublicClient(), []);
+  // Get the public client instance - this is safe to use on the client side
+  const supabase = supabasePublicClient();
 
   useEffect(() => {
     if (connected && publicKey) {
