@@ -14,7 +14,9 @@ dist-ssr
 .next
 
 # env files (can opt-in for committing if needed)
+!.env.production
 .env.keys
+.env
 
 # Editor directories and files
 !.vscode/extensions.json
