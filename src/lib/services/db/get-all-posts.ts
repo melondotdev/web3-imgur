@@ -10,7 +10,7 @@ const POSTS_PER_PAGE = 12; // This will show 3 rows on desktop (4 columns)
 
 export async function getAllPosts(
   sortBy: PostSortOption = 'newest',
-  page: number = 0
+  page = 0,
 ): Promise<Post[]> {
   // Get posts with pagination
   const query = supabasePublicClient()
@@ -26,7 +26,7 @@ export async function getAllPosts(
   }
 
   const { data: posts, error: postsError } = await query;
-  
+
   if (postsError) {
     throw new Error(`Failed to fetch posts: ${postsError.message}`);
   }
