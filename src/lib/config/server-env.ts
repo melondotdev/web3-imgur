@@ -1,5 +1,5 @@
+import * as dotenvx from '@dotenvx/dotenvx';
 import { z } from 'zod';
-import 'dotenv/config';
 
 const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -12,7 +12,7 @@ const serverEnvSchema = z.object({
 });
 
 export function getServerEnv() {
-  const envParse = serverEnvSchema.safeParse(process.env);
+  const envParse = serverEnvSchema.safeParse(dotenvx.get);
 
   if (!envParse.success) {
     console.error(

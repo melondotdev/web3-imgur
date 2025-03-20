@@ -39,7 +39,7 @@
       },
       "style": {
         "noImplicitBoolean": "error",
-        "noNamespace": "error",
+        "noNamespace": "off",
         "noNamespaceImport": "error",
         "noNegationElse": "error",
         "noParameterProperties": "error",
