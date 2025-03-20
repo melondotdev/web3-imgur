@@ -2,7 +2,7 @@ import { supabasePublicClient } from '@/lib/config/supabase';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 interface UserProfile {
   publicKey: PublicKey | null;
@@ -32,6 +32,9 @@ export function UserProfileProvider({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  // Create a memoized instance of the Supabase client
+  const supabase = useMemo(() => supabasePublicClient(), []);
+
   useEffect(() => {
     if (connected && publicKey) {
       loadProfile(publicKey);
@@ -43,7 +46,6 @@ export function UserProfileProvider({
   const loadProfile = async (publicKey: PublicKey) => {
     setIsLoading(true);
     try {
-      const supabase = supabasePublicClient();
       const { data: user, error: fetchError } = await supabase
         .from('users')
         .select('*')
@@ -75,7 +77,6 @@ export function UserProfileProvider({
 
     setIsLoading(true);
     try {
-      const supabase = supabasePublicClient();
       const { error: updateError } = await supabase
         .from('users')
         .update({
@@ -131,7 +132,6 @@ export function UserProfileProvider({
       const data = await response.json();
 
       // Set up Supabase session
-      const supabase = supabasePublicClient();
       await supabase.auth.setSession({
         access_token: data.data.session.access_token,
         refresh_token: data.data.session.refresh_token,
@@ -147,7 +147,6 @@ export function UserProfileProvider({
   };
 
   const signOut = async () => {
-    const supabase = supabasePublicClient();
     await supabase.auth.signOut();
     setProfile(null);
   };

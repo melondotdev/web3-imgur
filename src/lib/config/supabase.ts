@@ -2,18 +2,33 @@ import { createClient } from '@supabase/supabase-js';
 import { getClientEnv } from './client-env';
 import { getServerEnv } from './server-env';
 
+// Create a single instance for client operations
+const clientEnv = getClientEnv();
+const supabaseClientInstance = createClient(
+  clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+  clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
+
+// Server-side only instance creation
+let supabaseServerInstance: ReturnType<typeof createClient> | null = null;
+
 export function supabaseClient() {
-  const env = getServerEnv();
-  return createClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
-  );
+  // Only create server instance if we're on the server side
+  if (typeof window === 'undefined' && !supabaseServerInstance) {
+    const serverEnv = getServerEnv();
+    supabaseServerInstance = createClient(
+      serverEnv.NEXT_PUBLIC_SUPABASE_URL,
+      serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+    );
+  }
+  if (!supabaseServerInstance && typeof window !== 'undefined') {
+    throw new Error(
+      'Attempted to use server-side Supabase client on the client side',
+    );
+  }
+  return supabaseServerInstance;
 }
 
 export function supabasePublicClient() {
-  const env = getClientEnv();
-  return createClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+  return supabaseClientInstance;
 }
