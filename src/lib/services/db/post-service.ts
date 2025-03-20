@@ -6,8 +6,7 @@ import type { DbPost } from '@/lib/types/db/post';
 type CreatePostParams = {
   author: string;
   title: string;
-  imageId: string;
-  vaultId: string;
+  imageUrl: string;
   tags: string[];
 };
 
@@ -18,8 +17,7 @@ export async function createPost(params: CreatePostParams): Promise<DbPost> {
     .insert({
       username: params.author,
       title: params.title,
-      image_id: params.imageId,
-      vault_id: params.vaultId,
+      image_id: params.imageUrl,
     })
     .select()
     .single();
