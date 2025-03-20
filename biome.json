@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/1.8.0/schema.json",
   "organizeImports": {
     "enabled": true
   },
@@ -26,32 +26,32 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "suspicious": {
-        "noExplicitAny": "off"
-      },
-      "style": {
-        "noNonNullAssertion": "off"
-      },
       "correctness": {
-        "useExhaustiveDependencies": "off",
-        "noUnusedVariables": "off",
-        "noUnusedFunctionParameters": "off"
-      },
-      "a11y": {
-        "noAutofocus": "off",
-        "useKeyWithClickEvents": "off",
-        "useButtonType": "off",
-        "noStaticElementInteractions": "off"
-      },
-      "complexity": {
-        "useLiteralKeys": "off"
-      },
-      "performance": {
-        "noAccumulatingSpread": "off"
+        "noConstantMathMinMaxClamp": "error",
+        "noNodejsModules": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "error",
+        "noUnusedVariables": "error",
+        "useArrayLiterals": "error"
       },
       "nursery": {
-        "useImportType": "off",
-        "noNamespaceImport": "off"
+        "useSortedClasses": "off"
+      },
+      "style": {
+        "noImplicitBoolean": "error",
+        "noNamespace": "error",
+        "noNamespaceImport": "error",
+        "noNegationElse": "error",
+        "noParameterProperties": "error",
+        "noShoutyConstants": "error",
+        "useBlockStatements": "off",
+        "useCollapsedElseIf": "error",
+        "useConsistentArrayType": "error",
+        "useForOf": "error",
+        "useFragmentSyntax": "error",
+        "useShorthandArrayType": "error",
+        "useShorthandAssign": "error",
+        "useSingleCaseStatement": "error"
       }
     }
   },

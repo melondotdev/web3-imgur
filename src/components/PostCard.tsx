@@ -1,5 +1,5 @@
 import type { Post } from '@/lib/types/post';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 import { Heart } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 

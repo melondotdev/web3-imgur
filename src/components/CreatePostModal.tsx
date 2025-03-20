@@ -1,6 +1,7 @@
 import { Modal } from '@/components/base/Modal';
 import { createPost } from '@/lib/services/post-service';
 import type { CreatePostForm } from '@/lib/types/form/create-post-form';
+import type { Post } from '@/lib/types/post';
 import { createPostSchema } from '@/lib/types/request/create-post-request';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload, X } from 'lucide-react';
@@ -12,7 +13,6 @@ import {
   SEPARATORS,
   type Tag,
 } from 'react-tag-input';
-import { Post } from '@/lib/types/post';
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,14 +50,14 @@ export function CreatePostModal({
       formData.append('title', data.title);
       formData.append('username', data.username);
       formData.append('image', file);
-      formData.append('tags', JSON.stringify(tags.map(tag => tag.text)));
+      formData.append('tags', JSON.stringify(tags.map((tag) => tag.text)));
 
       const newPost = await createPost(formData);
-      
+
       if (onPostCreated) {
         onPostCreated(newPost);
       }
-      
+
       reset();
       setPreview('');
       setTags([]);
@@ -81,27 +81,37 @@ export function CreatePostModal({
     resetField('image');
     setPreview('');
   };
-  
+
   useEffect(() => {
     // For debugging
-    console.log('Setting tags:', tags.map(tag => tag.text));
-    setValue('tags', tags.map(tag => tag.text), { shouldValidate: true });
+    console.log(
+      'Setting tags:',
+      tags.map((tag) => tag.text),
+    );
+    setValue(
+      'tags',
+      tags.map((tag) => tag.text),
+      { shouldValidate: true },
+    );
   }, [tags, setValue]);
-  
+
   useEffect(() => {
     if (isOpen) {
       setValue('username', walletAddress);
     }
   }, [walletAddress, setValue, isOpen]);
-  
+
   const handleDelete = (index: number) => {
     setTags((prev) => prev.filter((_, i) => i !== index));
   };
-  
+
   const handleAddition = (tag: Tag) => {
-    setTags((prev) => [...prev, { id: tag.text, text: tag.text, className: '' }]);
+    setTags((prev) => [
+      ...prev,
+      { id: tag.text, text: tag.text, className: '' },
+    ]);
   };
-  
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <form

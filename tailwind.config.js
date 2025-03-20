@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       keyframes: {
@@ -79,9 +79,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require('tailwind-scrollbar-hide'),
-    require('@tailwindcss/aspect-ratio'),
-    require('tailwindcss-animate'),
-  ],
+  plugins: [require('tailwind-scrollbar-hide')],
 };
