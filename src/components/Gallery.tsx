@@ -1,3 +1,11 @@
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cacheService } from '@/lib/services/cache-service';
+import { imageCacheService } from '@/lib/services/cache-service';
 import { createComment } from '@/lib/services/comment-service';
 import {
   type PostSortOption,
@@ -12,12 +20,14 @@ import {
 import type { Comment, Post } from '@/lib/types/post';
 // import { useWallet } from '@suiet/wallet-kit';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Search } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { CreatePostModal } from './CreatePostModal';
-import styles from './Gallery.module.css';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
+import { Sidebar } from './Sidebar';
 
 interface TagCount {
   tag: string;
@@ -27,21 +37,9 @@ interface TagCount {
 const MAX_VISIBLE_TAGS = 5; // Adjust this number as needed
 
 function reorderPosts(posts: Post[], columnCount: number): Post[] {
-  const rows = Math.ceil(posts.length / columnCount);
-  const reordered = new Array(posts.length);
-
-  posts.forEach((post, i) => {
-    // Calculate position that maintains left-to-right order
-    const col = Math.floor(i / rows);
-    const row = i % rows;
-    const newIndex = row * columnCount + col;
-
-    if (newIndex < posts.length) {
-      reordered[newIndex] = post;
-    }
-  });
-
-  return reordered.filter(Boolean); // Remove any empty slots
+  // With CSS Grid, we don't need to reorder the posts
+  // Just return them in their original order
+  return posts;
 }
 
 export function Gallery() {
@@ -56,7 +54,7 @@ export function Gallery() {
   const loadingRef = useRef(false);
   const [columnCount, setColumnCount] = useState(4);
   const [tags, setTags] = useState<TagCount[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>('all');
   const [tagSearch, setTagSearch] = useState('');
   const [scrollLoadingEnabled, setScrollLoadingEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -66,6 +64,9 @@ export function Gallery() {
   const [loadedImages, setLoadedImages] = useState<Map<string, string>>(
     new Map(),
   );
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [postCache, setPostCache] = useState<Map<string, Post>>(new Map());
+  const postCacheRef = useRef<Map<string, Post>>(new Map());
 
   // Fetch voted posts only on initial load or wallet connect
   useEffect(() => {
@@ -81,7 +82,7 @@ export function Gallery() {
 
       try {
         const votedPostsPromises = postsToCheck.map((post) =>
-          hasUserVoted(post.id, wallet.publicKey!.toString()),
+          hasUserVoted(post.id, wallet.publicKey?.toString() || ''),
         );
 
         const votedResults = await Promise.all(votedPostsPromises);
@@ -101,7 +102,21 @@ export function Gallery() {
     [wallet.connected, wallet.publicKey],
   );
 
-  // Update loadPosts to fetch votes after loading posts
+  // Initialize cache only once
+  useEffect(() => {
+    const cachedPosts = cacheService.get<Post[]>('all-posts');
+    if (cachedPosts) {
+      const postMap = new Map(cachedPosts.map((post) => [post.id, post]));
+      setPostCache(postMap);
+      postCacheRef.current = postMap;
+      if (!posts.length) {
+        // Only set posts if there are none
+        setPosts(cachedPosts);
+      }
+    }
+  }, []); // Empty dependency array
+
+  // Update loadPosts to use ref instead of state
   const loadPosts = useCallback(
     async (pageNum: number, replace = false) => {
       if (loadingRef.current) return;
@@ -110,20 +125,27 @@ export function Gallery() {
       setLoading(true);
 
       try {
-        if (!selectedTag) {
-          const newPosts = await getAllPosts(sortBy, pageNum);
+        const newPosts = await getAllPosts(sortBy, pageNum);
 
-          if (newPosts.length === 0) {
-            setHasMore(false);
-          } else {
-            setPosts((prev) => {
-              const updatedPosts = replace ? newPosts : [...prev, ...newPosts];
-              // Fetch votes for the new posts if wallet is connected
-              if (wallet.connected && wallet.publicKey) {
-                fetchVotedPosts(updatedPosts);
-              }
-              return updatedPosts;
-            });
+        if (newPosts.length === 0) {
+          setHasMore(false);
+        } else {
+          setPosts((prev) => {
+            const updatedPosts = replace ? newPosts : [...prev, ...newPosts];
+            // Update cache using ref
+            const newCache = new Map(postCacheRef.current);
+            for (const post of updatedPosts) {
+              newCache.set(post.id, post);
+            }
+            postCacheRef.current = newCache;
+            cacheService.set('all-posts', updatedPosts);
+
+            return updatedPosts;
+          });
+
+          // Fetch votes after posts are loaded
+          if (wallet.connected && wallet.publicKey) {
+            await fetchVotedPosts(newPosts);
           }
         }
       } catch (error) {
@@ -134,14 +156,18 @@ export function Gallery() {
         loadingRef.current = false;
       }
     },
-    [sortBy, selectedTag, wallet.connected, wallet.publicKey, fetchVotedPosts],
+    [sortBy, wallet.connected, wallet.publicKey, fetchVotedPosts],
   );
 
   // Update the useEffect to fetch votes when wallet connects
   useEffect(() => {
-    if (wallet.connected && wallet.publicKey && posts.length > 0) {
-      fetchVotedPosts(posts);
-    }
+    const fetchVotes = async () => {
+      if (wallet.connected && wallet.publicKey && posts.length > 0) {
+        await fetchVotedPosts(posts);
+      }
+    };
+
+    fetchVotes();
   }, [wallet.connected, wallet.publicKey, posts, fetchVotedPosts]);
 
   // Handle voting at the Gallery level
@@ -157,9 +183,6 @@ export function Gallery() {
       try {
         setIsVoting(true);
         const isCurrentlyVoted = votedPosts.has(postId);
-        const newVoteCount = isCurrentlyVoted
-          ? currentVotes - 1
-          : currentVotes + 1;
 
         // Store original states for rollback
         const originalVotedPosts = new Set(votedPosts);
@@ -167,18 +190,14 @@ export function Gallery() {
         const originalSelectedPost = selectedPost;
 
         try {
-          // Make API call first
           if (isCurrentlyVoted) {
-            // Remove vote
             await removeVote(postId, wallet.publicKey.toString());
-            // Update voted posts set after successful API call
             setVotedPosts((prev) => {
               const newSet = new Set(prev);
               newSet.delete(postId);
               return newSet;
             });
           } else {
-            // Add vote
             const message = new TextEncoder().encode(
               `Vote for post: ${postId}`,
             );
@@ -189,7 +208,6 @@ export function Gallery() {
               signatureString,
               wallet.publicKey.toString(),
             );
-            // Update voted posts set after successful API call
             setVotedPosts((prev) => {
               const newSet = new Set(prev);
               newSet.add(postId);
@@ -197,7 +215,10 @@ export function Gallery() {
             });
           }
 
-          // Update post vote counts after successful API call
+          // Update post vote counts
+          const newVoteCount = isCurrentlyVoted
+            ? currentVotes - 1
+            : currentVotes + 1;
           setPosts((prevPosts) =>
             prevPosts.map((post) =>
               post.id === postId ? { ...post, votes: newVoteCount } : post,
@@ -215,7 +236,6 @@ export function Gallery() {
           setPosts(originalPosts);
           setSelectedPost(originalSelectedPost);
 
-          // Show appropriate error message
           if (error instanceof Error) {
             toast.error(error.message);
           } else {
@@ -257,11 +277,21 @@ export function Gallery() {
   useEffect(() => {
     const updateColumnCount = () => {
       const width = window.innerWidth;
-      if (width < 1024) {
-        // lg breakpoint
+      if (width < 640) {
+        // sm
         setColumnCount(2);
-      } else {
+      } else if (width < 768) {
+        // md
+        setColumnCount(3);
+      } else if (width < 1024) {
+        // lg
         setColumnCount(4);
+      } else if (width < 1280) {
+        // xl
+        setColumnCount(5);
+      } else {
+        // 2xl
+        setColumnCount(6);
       }
     };
 
@@ -277,13 +307,13 @@ export function Gallery() {
       const tagCountMap = new Map<string, number>();
 
       // Count tags from all posts
-      posts.forEach((post) => {
+      for (const post of posts) {
         if (post.tags) {
-          post.tags.forEach((tag) => {
+          for (const tag of post.tags) {
             tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1);
-          });
+          }
         }
-      });
+      }
 
       // Convert map to array of TagCount objects
       const tagCounts: TagCount[] = Array.from(tagCountMap.entries()).map(
@@ -302,9 +332,9 @@ export function Gallery() {
     calculateTagCounts();
   }, [posts]); // Dependency on posts array
 
-  // Add a function to get filtered posts
+  // Update getFilteredPosts to handle 'all' tag correctly
   const getFilteredPosts = useCallback(() => {
-    if (!selectedTag) return posts;
+    if (selectedTag === 'all') return posts;
     return posts.filter((post) => post.tags?.includes(selectedTag));
   }, [posts, selectedTag]);
 
@@ -320,14 +350,85 @@ export function Gallery() {
     setPosts((prev) => [newPost, ...prev]);
   }, []);
 
-  // Add this function to handle image loading
+  // Add this function to handle image preloading
+  const preloadImage = useCallback((imageUrl: string) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = imageUrl;
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+    });
+  }, []);
+
+  // Update handleImageLoad to use cache
   const handleImageLoad = useCallback((postId: string, imageUrl: string) => {
     setLoadedImages((prev) => {
       const newMap = new Map(prev);
       newMap.set(postId, imageUrl);
       return newMap;
     });
+    // Cache the image URL
+    imageCacheService.set(postId, imageUrl);
   }, []);
+
+  // Update handlePostSelect to preload image
+  const handlePostSelect = useCallback(
+    async (post: Post) => {
+      const cachedPost = postCacheRef.current.get(post.id);
+
+      // If wallet is connected, ensure we have the vote status
+      if (wallet.connected && wallet.publicKey) {
+        const hasVoted = await hasUserVoted(
+          post.id,
+          wallet.publicKey.toString(),
+        );
+        if (hasVoted) {
+          setVotedPosts((prev) => new Set(prev).add(post.id));
+        }
+      }
+
+      // Rest of the function remains the same...
+      const cachedImage =
+        loadedImages.get(post.id) || imageCacheService.get(post.id);
+
+      if (!cachedImage) {
+        try {
+          await preloadImage(post.imageUrl);
+          handleImageLoad(post.id, post.imageUrl);
+        } catch (error) {
+          console.error('Failed to preload image:', error);
+        }
+      }
+
+      setSelectedPost(cachedPost || post);
+    },
+    [
+      loadedImages,
+      handleImageLoad,
+      preloadImage,
+      wallet.connected,
+      wallet.publicKey,
+    ],
+  );
+
+  // Add effect to preload images for visible posts
+  useEffect(() => {
+    const preloadVisiblePosts = async () => {
+      const visiblePosts = getFilteredPosts().slice(0, 10); // Preload first 10 posts
+      for (const post of visiblePosts) {
+        if (!loadedImages.has(post.id) && !imageCacheService.get(post.id)) {
+          try {
+            await preloadImage(post.imageUrl);
+            handleImageLoad(post.id, post.imageUrl);
+          } catch (error) {
+            console.error('Failed to preload image:', error);
+          }
+        }
+      }
+    };
+
+    preloadVisiblePosts();
+  }, [posts, getFilteredPosts, loadedImages, preloadImage, handleImageLoad]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -372,116 +473,153 @@ export function Gallery() {
     .slice(0, 20); // Show top 20 matching tags
 
   return (
-    <>
-      <div className="mb-4 flex items-center gap-4">
-        <div className="relative flex-grow max-w-md">
-          <input
-            type="text"
-            placeholder="Search tags..."
-            value={tagSearch}
-            onChange={(e) => setTagSearch(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
+    <div className="flex">
+      <Sidebar />
+      <main className="flex-1 ml-40 min-w-0">
+        <div className="mb-4 flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              {isSearchOpen ? (
+                <input
+                  type="text"
+                  placeholder="Search tags..."
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  className="w-48 px-3 py-1.5 text-sm border border-gray-700 rounded-full bg-transparent text-gray-300 focus:outline-none focus:border-gray-600"
+                  onBlur={() => {
+                    if (!tagSearch) {
+                      setIsSearchOpen(false);
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              )}
+            </div>
 
-        <div className="flex-grow flex items-center gap-2 overflow-x-auto">
-          {selectedTag && (
-            <button
-              onClick={() => {
-                setSelectedTag(null);
-              }}
-              className="shrink-0 px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600"
-            >
-              Clear Filter
-            </button>
-          )}
-          {filteredTags
-            .slice(0, tagSearch ? undefined : MAX_VISIBLE_TAGS)
-            .map(({ tag, count }) => (
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              {/* Add the "All" tag */}
               <button
-                key={tag}
-                onClick={() => {
-                  setSelectedTag(tag);
-                }}
-                className={`shrink-0 px-3 py-1 text-sm rounded-full ${
-                  selectedTag === tag
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                type="button"
+                onClick={() => setSelectedTag('all')}
+                className={`shrink-0 px-3 py-1.5 text-sm rounded-full transition-colors ${
+                  selectedTag === 'all'
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:text-white'
                 }`}
               >
-                {tag} ({count})
+                All
               </button>
-            ))}
-        </div>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as PostSortOption)}
-          className="shrink-0 px-4 py-2 border rounded-md bg-white dark:bg-gray-800"
-        >
-          <option value="newest">Latest Posts</option>
-          <option value="most-voted">Most Voted</option>
-        </select>
-      </div>
-
-      <div className={styles.masonryGrid}>
-        {reorderPosts(getFilteredPosts(), columnCount).map((post) => (
-          <div key={post.id} className={styles.gridItem}>
-            <PostCard
-              post={post}
-              onClick={setSelectedPost}
-              isWalletConnected={wallet.connected}
-              onVoteClick={handleVoteClick}
-              hasVoted={votedPosts.has(post.id)}
-              isVoting={isVoting}
-              onImageLoad={handleImageLoad}
-            />
+              {filteredTags
+                .slice(0, tagSearch ? undefined : MAX_VISIBLE_TAGS)
+                .map(({ tag, count }) => (
+                  <button
+                    type="button"
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={`shrink-0 px-3 py-1.5 text-sm rounded-full transition-colors ${
+                      selectedTag === tag
+                        ? 'bg-white/10 text-white'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {tag} ({count})
+                  </button>
+                ))}
+            </div>
           </div>
-        ))}
-      </div>
 
-      {loading && (
-        <div className="flex justify-center my-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="flex-grow" />
+
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
+              <span className="text-sm">
+                {sortBy === 'newest' ? 'Latest Posts' : 'Most Voted'}
+              </span>
+              <ChevronDown className="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-32">
+              <DropdownMenuItem
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => setSortBy('newest')}
+              >
+                <span>Latest Posts</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => setSortBy('most-voted')}
+              >
+                <span>Most Voted</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
 
-      {/* Add Load More button */}
-      {hasMore && !loading && !scrollLoadingEnabled && (
-        <div className="flex justify-center my-4">
-          <button
-            onClick={handleLoadMore}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Load More
-          </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
+          {reorderPosts(getFilteredPosts(), columnCount).map((post) => (
+            <div key={post.id} className="w-full">
+              <PostCard
+                post={post}
+                onClick={handlePostSelect}
+                isWalletConnected={wallet.connected}
+                onVoteClick={handleVoteClick}
+                hasVoted={votedPosts.has(post.id)}
+                isVoting={isVoting}
+                onImageLoad={handleImageLoad}
+              />
+            </div>
+          ))}
         </div>
-      )}
 
-      {selectedPost && (
-        <PostModal
-          wallet={wallet}
-          post={selectedPost}
-          comments={comments}
-          isOpen={true}
-          onClose={() => setSelectedPost(null)}
-          onComment={handleComment}
-          onVoteClick={handleVoteClick}
-          hasVoted={votedPosts.has(selectedPost.id)}
-          isVoting={isVoting}
-          loadedImages={loadedImages}
+        {loading && (
+          <div className="flex justify-center my-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+          </div>
+        )}
+
+        {hasMore && !loading && !scrollLoadingEnabled && (
+          <div className="flex justify-center my-8 pb-8">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              className="px-3 py-1.5 text-sm bg-gray-800/50 text-gray-400 rounded-full hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              Load More
+            </button>
+          </div>
+        )}
+
+        {selectedPost && (
+          <PostModal
+            wallet={wallet}
+            post={selectedPost}
+            comments={comments}
+            isOpen={true}
+            onClose={() => setSelectedPost(null)}
+            onComment={handleComment}
+            onVoteClick={handleVoteClick}
+            hasVoted={votedPosts.has(selectedPost.id)}
+            isVoting={isVoting}
+            loadedImages={loadedImages}
+          />
+        )}
+
+        <CreatePostModal
+          isOpen={isOpen}
+          onClose={() => {
+            setIsOpen(false);
+            setWalletAddress('');
+          }}
+          walletAddress={walletAddress}
+          onPostCreated={handleNewPost}
         />
-      )}
-
-      <CreatePostModal
-        isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false);
-          setWalletAddress('');
-        }}
-        walletAddress={walletAddress}
-        onPostCreated={handleNewPost}
-      />
-    </>
+      </main>
+    </div>
   );
 }

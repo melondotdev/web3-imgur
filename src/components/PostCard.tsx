@@ -1,10 +1,7 @@
 import type { Post } from '@/lib/types/post';
-import { ArrowBigUp, MessageCircle, Copy } from 'lucide-react';
-import { trimUsername } from '@/lib/utils/trim-username';
-import { cn } from '@/lib/utils/cn';
-import { useState, useEffect } from 'react';
-import { getSolscanUrl } from '@/lib/utils/solana';
-import { toast } from 'react-hot-toast';
+import { cn } from '@/lib/utils';
+import { Heart } from 'lucide-react';
+import { useCallback, useEffect } from 'react';
 
 interface PostCardProps {
   isWalletConnected: boolean;
@@ -16,126 +13,94 @@ interface PostCardProps {
   onImageLoad: (postId: string, imageUrl: string) => void;
 }
 
-export function PostCard({ 
-  isWalletConnected, 
-  post, 
-  onClick, 
+export function PostCard({
+  post,
+  onClick,
   onVoteClick,
   hasVoted,
   isVoting,
-  onImageLoad
+  onImageLoad,
 }: PostCardProps) {
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-
   // Preload image
-  const handleImageLoad = () => {
+  const handleImageLoad = useCallback(() => {
     const img = new Image();
     img.src = post.imageUrl;
     img.onload = () => {
-      setIsImageLoaded(true);
       onImageLoad(post.id, post.imageUrl);
     };
-  };
+  }, [post.id, post.imageUrl, onImageLoad]);
 
   // Call handleImageLoad when component mounts
   useEffect(() => {
     handleImageLoad();
-  }, [post.imageUrl]);
+  }, [handleImageLoad]);
 
-  const handleVoteClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await onVoteClick(post.id, post.votes);
-  };
+  // Get display name - use username if available, otherwise trim wallet address
+  const displayName = post.username;
+  const avatarSeed = post.username;
 
-  const handleCopyAddress = (e: React.MouseEvent, address: string) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(address);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      onClick(post);
+    }
   };
 
   return (
     <div
-      className="bg-gray-900 rounded-lg border border-yellow-500/20 overflow-hidden cursor-pointer"
+      // biome-ignore lint/a11y/useSemanticElements: <explanation>
+      role="button"
       onClick={() => onClick(post)}
+      onKeyDown={handleKeyPress}
+      tabIndex={0}
+      className="cursor-pointer group relative w-full"
     >
-      <img
-        src={post.imageUrl}
-        alt={post.title || 'Post content'}
-        className={cn(
-          "w-full h-auto",
-          !isImageLoaded && "opacity-0" // Hide image until loaded
-        )}
-      />
-      {!isImageLoaded && (
-        <div className="w-full aspect-video flex items-center justify-center bg-gray-800">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+      <div className="rounded-lg overflow-hidden bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow">
+        <div className="relative w-full">
+          <img
+            src={post.imageUrl}
+            alt={post.title}
+            className="w-full h-auto object-cover"
+            onLoad={handleImageLoad}
+          />
         </div>
-      )}
-      <div className="p-4 space-y-3">
-        {/* Title and author section */}
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-white">{post.title}</h3>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-yellow-500/80">by</span>
-            <div className="flex items-center gap-2">
-              <a
-                href={getSolscanUrl(post.username)}
-                onClick={(e) => e.stopPropagation()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-yellow-500/80 hover:text-yellow-500"
-                title="View on Solscan"
-              >
-                @{trimUsername(post.username)}
-              </a>
-              <button
-                onClick={(e) => handleCopyAddress(e, post.username)}
-                className="text-yellow-500/60 hover:text-yellow-500 p-1"
-                title="Copy address"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-            </div>
+      </div>
+      <div className="p-2">
+        <h3 className="text-sm font-medium text-gray-200 line-clamp-2">
+          {post.title}
+        </h3>
+        <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center flex-1 min-w-0">
+            <img
+              src={`https://api.dicebear.com/6.x/identicon/svg?seed=${avatarSeed}`}
+              alt="avatar"
+              className="w-6 h-6 rounded-full mr-2"
+            />
+            <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+              {displayName}
+            </span>
           </div>
-        </div>
-
-        {/* Tags section */}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 text-xs bg-yellow-500/10 text-yellow-500/80 rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Interactions section */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
             <button
-              onClick={handleVoteClick}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onVoteClick(post.id, post.votes);
+              }}
               disabled={isVoting}
               className={cn(
-                "flex items-center space-x-2 text-yellow-500 hover:text-yellow-400",
-                isVoting && "opacity-50 cursor-not-allowed",
-                !isWalletConnected && "opacity-50",
-                hasVoted && "text-yellow-400"
+                'text-gray-400 hover:text-white transition-colors flex items-center gap-1.5',
+                hasVoted && 'text-white',
               )}
-              title={
-                !isWalletConnected 
-                  ? "Connect wallet to vote" 
-                  : isVoting
-                    ? "Processing..."
-                    : hasVoted
-                      ? "Click to remove vote"
-                      : "Click to vote"
-              }
             >
-              <ArrowBigUp className={cn("w-5 h-5", hasVoted && "fill-yellow-400")} />
-              <span>{post.votes}</span>
+              <Heart
+                className={cn(
+                  'w-4 h-4 transition-colors',
+                  hasVoted && 'fill-white stroke-white',
+                )}
+              />
+              <span className={cn('text-sm', hasVoted && 'text-white')}>
+                {post.votes}
+              </span>
             </button>
           </div>
         </div>
