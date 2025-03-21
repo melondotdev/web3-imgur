@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dotenvx": "dotenvx",
-    "dev": "dotenvx run -f .env.production -- next dev",
+    "dev": "dotenvx run -f .env.local -f .env.production -- next dev",
     "build": "dotenvx run -f .env.production -- next build",
     "start": "dotenvx run -f .env.production -- next start",
     "format": "biome format --write .",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.38.0",
+    "@auth/supabase-adapter": "^1.8.0",
     "@dotenvx/dotenvx": "^1.39.0",
     "@headlessui/react": "^2.2.0",
     "@hookform/resolvers": "^4.1.0",
@@ -38,7 +39,6 @@
     "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
     "lucide-react": "^0.483.0",
-    "masonry-layout": "^4.2.2",
     "next": "^15.1.7",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",

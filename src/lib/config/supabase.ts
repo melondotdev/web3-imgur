@@ -21,17 +21,6 @@ export function supabaseClient() {
       supabaseServerInstance = createClient(
         serverEnv.NEXT_PUBLIC_SUPABASE_URL,
         serverEnv.SUPABASE_SERVICE_ROLE_KEY,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-          global: {
-            headers: {
-              Authorization: `Bearer ${serverEnv.SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-          },
-        },
       );
     }
     return supabaseServerInstance;

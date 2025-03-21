@@ -6,6 +6,10 @@ const env = getServerEnv();
 
 const handler = NextAuth({
   secret: env.NEXTAUTH_SECRET,
+  // adapter: SupabaseAdapter({
+  //   url: env.NEXT_PUBLIC_SUPABASE_URL,
+  //   secret: env.SUPABASE_SERVICE_ROLE_KEY,
+  // }),
   providers: [
     TwitterProvider({
       clientId: env.X_CLIENT_ID,
@@ -18,16 +22,11 @@ const handler = NextAuth({
           image: profile.data.profile_image_url,
         };
       },
-      authorization: {
-        params: {
-          scope: 'users.read tweet.read offline.access',
-        },
-      },
     }),
   ],
-  debug: true, // Enable debug logs
   callbacks: {
     async jwt({ token, account }) {
+      console.log('jwt', token, account);
       // Persist the OAuth access_token and oauth_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token as string;
@@ -35,6 +34,7 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      console.log('session', session, token);
       // Send properties to the client
       session.accessToken = token.accessToken;
       return session;

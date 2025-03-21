@@ -15,7 +15,7 @@ dist-ssr
 
 # env files (can opt-in for committing if needed)
 .env.keys
-.env
+.env.local
 
 # Editor directories and files
 !.vscode/extensions.json
