@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import '@suiet/wallet-kit/style.css';
 import { getClientEnv } from '@/lib/config/client-env';
 import type { PropsWithChildren } from 'react';
+import { Providers } from './providers';
 
 // This will throw if env vars are missing
 getClientEnv();
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
       <body suppressHydrationWarning={true}>
         <Toaster position="top-right" />
         {/* <SuiProvider>{children}</SuiProvider> */}
-        <SolanaProvider>{children}</SolanaProvider>
+        <SolanaProvider>
+          <Providers>{children}</Providers>
+        </SolanaProvider>
       </body>
     </html>
   );
