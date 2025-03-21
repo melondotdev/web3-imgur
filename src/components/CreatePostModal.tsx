@@ -62,6 +62,9 @@ export function CreatePostModal({
       setPreview('');
       setTags([]);
       onClose();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       toast.error(`Error creating post: ${JSON.stringify(error)}`);
     }

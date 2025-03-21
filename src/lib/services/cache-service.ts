@@ -60,3 +60,32 @@ export const imageCacheService = {
     return cacheService.get(key);
   },
 };
+
+// Cache service for user signatures
+export const signatureCacheService = {
+  get: (key: string): string | null => {
+    try {
+      const item = localStorage.getItem(`signature_${key}`);
+      return item ? item : null;
+    } catch (error) {
+      console.error('Error getting from signature cache:', error);
+      return null;
+    }
+  },
+
+  set: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(`signature_${key}`, value);
+    } catch (error) {
+      console.error('Error setting signature cache:', error);
+    }
+  },
+
+  remove: (key: string): void => {
+    try {
+      localStorage.removeItem(`signature_${key}`);
+    } catch (error) {
+      console.error('Error removing from signature cache:', error);
+    }
+  },
+};

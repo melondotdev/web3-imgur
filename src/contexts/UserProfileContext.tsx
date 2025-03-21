@@ -2,12 +2,19 @@ import { supabasePublicClient } from '@/lib/config/supabase';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 interface UserProfile {
   publicKey: PublicKey | null;
   username?: string;
   avatar?: string;
+  twitter_handle?: string;
   // Add other profile fields as needed
 }
 
@@ -26,7 +33,9 @@ const UserProfileContext = createContext<UserProfileContextType | undefined>(
 
 export function UserProfileProvider({
   children,
-}: { children: React.ReactNode }) {
+}: {
+  children: React.ReactNode;
+}) {
   const { publicKey, connected, signMessage } = useWallet();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,84 +44,45 @@ export function UserProfileProvider({
   // Get the public client instance - this is safe to use on the client side
   const supabase = supabasePublicClient();
 
-  // Handle wallet connection/disconnection
-  useEffect(() => {
-    const handleConnectionChange = async () => {
-      if (connected && publicKey) {
-        await loadProfile(publicKey);
-      } else {
-        // Sign out of Supabase when wallet disconnects
-        await signOut();
+  const loadProfile = useCallback(
+    async (publicKey: PublicKey) => {
+      setIsLoading(true);
+      try {
+        const { data: user, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('wallet_address', publicKey.toString())
+          .single();
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        setProfile({
+          publicKey,
+          username: user.username,
+          avatar: user.avatar_url,
+          twitter_handle: user.twitter_handle,
+        });
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        setError(
+          err instanceof Error ? err : new Error('Failed to load profile'),
+        );
+      } finally {
+        setIsLoading(false);
       }
-    };
+    },
+    [supabase],
+  );
 
-    handleConnectionChange();
-  }, [connected, publicKey]);
-
-  const loadProfile = async (publicKey: PublicKey) => {
-    setIsLoading(true);
-    try {
-      const { data: user, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', publicKey.toString())
-        .single();
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setProfile({
-        publicKey,
-        username: user.username,
-        avatar: user.avatar_url,
-      });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to load profile'),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!profile) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          username: updates.username,
-          avatar_url: updates.avatar,
-        })
-        .eq('wallet_address', profile.publicKey?.toString());
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setProfile({ ...profile, ...updates });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error('Failed to update profile'),
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signIn = async () => {
+  const signIn = useCallback(async () => {
     if (!publicKey || !signMessage) {
       return;
     }
 
     try {
       setIsLoading(true);
-
       // Create message to sign
       const message = `Sign in to our app: ${new Date().toISOString()}`;
       const encodedMessage = new TextEncoder().encode(message);
@@ -135,32 +105,62 @@ export function UserProfileProvider({
         throw new Error('Authentication failed');
       }
 
-      const data = await response.json();
-
-      // Set up Supabase session
-      await supabase.auth.setSession({
-        access_token: data.data.session.access_token,
-        refresh_token: data.data.session.refresh_token,
-      });
-
-      // Load profile
+      // Load profile after successful auth
       await loadProfile(publicKey);
     } catch (err) {
+      console.error('Sign in error:', err);
       setError(err instanceof Error ? err : new Error('Failed to sign in'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [publicKey, signMessage, loadProfile]);
 
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Error signing out:', err);
-    } finally {
-      setProfile(null);
+  const signOut = useCallback(async () => {
+    setProfile(null);
+    setError(null);
+  }, []);
+
+  const updateProfile = useCallback(
+    async (updates: Partial<UserProfile>) => {
+      if (!profile?.publicKey) return;
+
+      setIsLoading(true);
+      try {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            username: updates.username,
+            avatar_url: updates.avatar,
+            twitter_handle: updates.twitter_handle,
+          })
+          .eq('wallet_address', profile.publicKey.toString());
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        setProfile({ ...profile, ...updates });
+      } catch (err) {
+        console.error('Update profile error:', err);
+        setError(
+          err instanceof Error ? err : new Error('Failed to update profile'),
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [profile, supabase],
+  );
+
+  // Handle wallet connection/disconnection
+  useEffect(() => {
+    if (!connected || !publicKey) {
+      signOut();
+      return;
     }
-  };
+
+    signIn();
+  }, [connected, publicKey, signIn, signOut]);
 
   return (
     <UserProfileContext.Provider

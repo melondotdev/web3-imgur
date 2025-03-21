@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cacheService } from '@/lib/services/cache-service';
 import { imageCacheService } from '@/lib/services/cache-service';
+import { signatureCacheService } from '@/lib/services/cache-service';
 import { createComment } from '@/lib/services/comment-service';
 import {
   type PostSortOption,
@@ -34,7 +35,7 @@ interface TagCount {
   count: number;
 }
 
-const MAX_VISIBLE_TAGS = 5; // Adjust this number as needed
+const MAX_VISIBLE_TAGS = 10; // Adjust this number as needed
 
 function reorderPosts(posts: Post[], columnCount: number): Post[] {
   // With CSS Grid, we don't need to reorder the posts
@@ -53,6 +54,7 @@ export function Gallery() {
   const [hasMore, setHasMore] = useState(true);
   const loadingRef = useRef(false);
   const [columnCount, setColumnCount] = useState(4);
+  const [columnWidth, setColumnWidth] = useState(0);
   const [tags, setTags] = useState<TagCount[]>([]);
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [tagSearch, setTagSearch] = useState('');
@@ -170,10 +172,39 @@ export function Gallery() {
     fetchVotes();
   }, [wallet.connected, wallet.publicKey, posts, fetchVotedPosts]);
 
-  // Handle voting at the Gallery level
+  // Add effect to handle wallet connection and signature caching
+  useEffect(() => {
+    const cacheSignature = async () => {
+      if (wallet.connected && wallet.publicKey && wallet.signMessage) {
+        try {
+          // Check if we already have a cached signature
+          const cachedSignature = signatureCacheService.get(
+            wallet.publicKey.toString(),
+          );
+          if (!cachedSignature) {
+            // Create a message to sign
+            const message = new TextEncoder().encode('Sign in to Web3 Imgur');
+            const signature = await wallet.signMessage(message);
+            const signatureString = Buffer.from(signature).toString('base64');
+            signatureCacheService.set(
+              wallet.publicKey.toString(),
+              signatureString,
+            );
+          }
+        } catch (error) {
+          console.error('Failed to cache signature:', error);
+          toast.error('Failed to cache signature');
+        }
+      }
+    };
+
+    cacheSignature();
+  }, [wallet.connected, wallet.publicKey, wallet.signMessage]);
+
+  // Update handleVoteClick to use cached signature
   const handleVoteClick = useCallback(
     async (postId: string, currentVotes: number) => {
-      if (!wallet.connected || !wallet.publicKey || !wallet.signMessage) {
+      if (!wallet.connected || !wallet.publicKey) {
         toast.error('Please connect your wallet to vote');
         return;
       }
@@ -198,16 +229,10 @@ export function Gallery() {
               return newSet;
             });
           } else {
-            const message = new TextEncoder().encode(
-              `Vote for post: ${postId}`,
-            );
-            const signature = await wallet.signMessage(message);
-            const signatureString = Buffer.from(signature).toString('base64');
-            await incrementVote(
-              postId,
-              signatureString,
-              wallet.publicKey.toString(),
-            );
+            // Get cached signature
+            const signature =
+              signatureCacheService.get(wallet.publicKey.toString()) || '';
+            await incrementVote(postId, signature, wallet.publicKey.toString());
             setVotedPosts((prev) => {
               const newSet = new Set(prev);
               newSet.add(postId);
@@ -225,6 +250,7 @@ export function Gallery() {
             ),
           );
 
+          // Update selected post if it's the same one
           if (selectedPost?.id === postId) {
             setSelectedPost((prev) =>
               prev ? { ...prev, votes: newVoteCount } : null,
@@ -247,6 +273,41 @@ export function Gallery() {
       }
     },
     [wallet, isVoting, votedPosts, posts, selectedPost],
+  );
+
+  // Add a function to handle vote updates from PostModal
+  const handlePostModalVoteUpdate = useCallback(
+    (postId: string, newVoteCount: number) => {
+      // Update posts array
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId ? { ...post, votes: newVoteCount } : post,
+        ),
+      );
+
+      // Update selected post if it's the same one
+      if (selectedPost?.id === postId) {
+        setSelectedPost((prev) =>
+          prev ? { ...prev, votes: newVoteCount } : null,
+        );
+      }
+
+      // Update voted posts set
+      if (newVoteCount > (posts.find((p) => p.id === postId)?.votes || 0)) {
+        setVotedPosts((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(postId);
+          return newSet;
+        });
+      } else {
+        setVotedPosts((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+      }
+    },
+    [selectedPost, posts],
   );
 
   // Load initial posts when sort changes
@@ -273,31 +334,55 @@ export function Gallery() {
     }
   }, [selectedPost]);
 
-  // Update column count on window resize
+  // Update column count and width on window resize
   useEffect(() => {
-    const updateColumnCount = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        // sm
-        setColumnCount(2);
-      } else if (width < 768) {
-        // md
-        setColumnCount(3);
-      } else if (width < 1024) {
-        // lg
-        setColumnCount(4);
-      } else if (width < 1280) {
-        // xl
-        setColumnCount(5);
-      } else {
-        // 2xl
-        setColumnCount(6);
-      }
+    let timeoutId: NodeJS.Timeout;
+
+    const updateColumns = () => {
+      const mainElement = document.querySelector('main');
+      if (!mainElement) return;
+
+      const sidebarWidth = 160; // w-40 class from Sidebar.tsx equals 10rem (160px)
+      const minColumnWidth = 200; // Minimum width for each column
+      const gap = 16; // 1rem = 16px
+      const padding = 32; // 32px for padding (16px each side)
+
+      // Calculate available width accounting for sidebar and padding
+      const availableWidth = mainElement.clientWidth - sidebarWidth - padding;
+
+      // Calculate maximum number of columns that can fit while maintaining minimum width
+      const maxColumns = Math.floor(
+        (availableWidth + gap) / (minColumnWidth + gap),
+      );
+      const newColumnCount = Math.max(1, Math.min(maxColumns, 5)); // Between 1 and 6 columns
+
+      // Calculate the actual column width to fill available space
+      const totalGapWidth = (newColumnCount - 1) * gap;
+      const newColumnWidth = Math.floor(
+        (availableWidth - totalGapWidth) / newColumnCount,
+      );
+
+      setColumnCount(newColumnCount);
+      setColumnWidth(newColumnWidth);
     };
 
-    updateColumnCount();
-    window.addEventListener('resize', updateColumnCount);
-    return () => window.removeEventListener('resize', updateColumnCount);
+    // Debounced resize handler
+    const debouncedUpdateColumns = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(updateColumns, 150); // 150ms debounce
+    };
+
+    // Initial calculation
+    updateColumns();
+
+    // Add resize listener with debouncing
+    window.addEventListener('resize', debouncedUpdateColumns);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', debouncedUpdateColumns);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // Update the useEffect for loading tags
@@ -374,33 +459,34 @@ export function Gallery() {
   // Update handlePostSelect to preload image
   const handlePostSelect = useCallback(
     async (post: Post) => {
-      const cachedPost = postCacheRef.current.get(post.id);
+      // Get the most up-to-date post data from our posts array
+      const currentPost = posts.find((p) => p.id === post.id) || post;
 
       // If wallet is connected, ensure we have the vote status
       if (wallet.connected && wallet.publicKey) {
         const hasVoted = await hasUserVoted(
-          post.id,
+          currentPost.id,
           wallet.publicKey.toString(),
         );
         if (hasVoted) {
-          setVotedPosts((prev) => new Set(prev).add(post.id));
+          setVotedPosts((prev) => new Set(prev).add(currentPost.id));
         }
       }
 
-      // Rest of the function remains the same...
       const cachedImage =
-        loadedImages.get(post.id) || imageCacheService.get(post.id);
+        loadedImages.get(currentPost.id) ||
+        imageCacheService.get(currentPost.id);
 
       if (!cachedImage) {
         try {
-          await preloadImage(post.imageUrl);
-          handleImageLoad(post.id, post.imageUrl);
+          await preloadImage(currentPost.imageUrl);
+          handleImageLoad(currentPost.id, currentPost.imageUrl);
         } catch (error) {
           console.error('Failed to preload image:', error);
         }
       }
 
-      setSelectedPost(cachedPost || post);
+      setSelectedPost(currentPost);
     },
     [
       loadedImages,
@@ -408,6 +494,7 @@ export function Gallery() {
       preloadImage,
       wallet.connected,
       wallet.publicKey,
+      posts,
     ],
   );
 
@@ -518,7 +605,7 @@ export function Gallery() {
               </button>
               {filteredTags
                 .slice(0, tagSearch ? undefined : MAX_VISIBLE_TAGS)
-                .map(({ tag, count }) => (
+                .map(({ tag }) => (
                   <button
                     type="button"
                     key={tag}
@@ -529,7 +616,7 @@ export function Gallery() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    {tag} ({count})
+                    {tag}
                   </button>
                 ))}
             </div>
@@ -538,7 +625,7 @@ export function Gallery() {
           <div className="flex-grow" />
 
           <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
+            <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 ml-6 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
               <span className="text-sm">
                 {sortBy === 'newest' ? 'Latest Posts' : 'Most Voted'}
               </span>
@@ -561,9 +648,23 @@ export function Gallery() {
           </DropdownMenu>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
+        <div
+          style={
+            {
+              columns: columnCount,
+              columnGap: '1rem',
+              width: 'calc(100% - 2rem)',
+              margin: '0 auto',
+            } as React.CSSProperties
+          }
+          className="px-4"
+        >
           {reorderPosts(getFilteredPosts(), columnCount).map((post) => (
-            <div key={post.id} className="w-full">
+            <div
+              key={post.id}
+              style={{ width: columnWidth }}
+              className="mb-4 break-inside-avoid inline-block"
+            >
               <PostCard
                 post={post}
                 onClick={handlePostSelect}
@@ -607,6 +708,7 @@ export function Gallery() {
             hasVoted={votedPosts.has(selectedPost.id)}
             isVoting={isVoting}
             loadedImages={loadedImages}
+            onLocalVoteUpdate={handlePostModalVoteUpdate}
           />
         )}
 

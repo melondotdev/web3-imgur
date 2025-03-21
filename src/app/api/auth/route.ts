@@ -43,32 +43,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists
+    console.log('Checking if user exists for wallet:', validated.publicKey);
+
+    // Check if user exists - using service role client
     let { data: user, error: fetchError } = await supabase
       .from('users')
       .select('*')
       .eq('wallet_address', validated.publicKey)
       .single();
 
+    console.log('User fetch result:', { user, error: fetchError });
+
     if (fetchError && fetchError.code !== 'PGRST116') {
       // PGRST116 is "not found" error
+      console.error('Error fetching user:', fetchError);
       throw fetchError;
     }
 
     const timestamp = new Date().toISOString();
 
     if (user) {
-      // Update last login time
+      console.log('Updating existing user');
+      // Update last login time - using service role client
       const { error: updateError } = await supabase
         .from('users')
         .update({ last_login: timestamp })
         .eq('wallet_address', validated.publicKey);
 
       if (updateError) {
+        console.error('Error updating user:', updateError);
         throw updateError;
       }
     } else {
-      // Create new user if doesn't exist
+      console.log('Creating new user');
+      // Create new user if doesn't exist - using service role client
       const { data: newUser, error: createError } = await supabase
         .from('users')
         .insert([
@@ -83,30 +91,14 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (createError) {
+        console.error('Error creating user:', createError);
         throw createError;
       }
 
       user = newUser;
     }
 
-    // Create JWT token for session
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.signUp({
-      email: `${validated.publicKey}@solana-wallet.local`,
-      password: bs58.encode(crypto.getRandomValues(new Uint8Array(32))),
-      options: {
-        data: {
-          wallet_address: validated.publicKey,
-        },
-      },
-    });
-
-    if (sessionError) {
-      throw sessionError;
-    }
-
+    // Return the user data without Supabase Auth
     return NextResponse.json(
       {
         message: 'Authentication successful',
@@ -116,7 +108,8 @@ export async function POST(request: NextRequest) {
             walletAddress: user.wallet_address,
             username: user.username,
           },
-          session,
+          // Include the verified signature as proof of wallet ownership
+          token: validated.signature,
         },
       },
       { status: 200 },

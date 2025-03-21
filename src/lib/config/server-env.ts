@@ -6,6 +6,9 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   PINATA_JWT: z.string().min(1),
   NEXT_PUBLIC_GATEWAY_URL: z.string().min(1),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
+  X_CLIENT_ID: z.string().min(1),
+  X_CLIENT_SECRET: z.string().min(1),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

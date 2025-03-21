@@ -5,7 +5,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { imageCacheService } from '@/lib/services/cache-service';
+import {
+  imageCacheService,
+  signatureCacheService,
+} from '@/lib/services/cache-service';
 import {
   hasUserVotedComment,
   incrementCommentVote,
@@ -99,33 +102,28 @@ export function PostModal({
     };
   }, [displayPost?.id, displayPost?.imageUrl, loadedImages]);
 
-  const handleVoteClick = async () => {
-    await onVoteClick(displayPost.id, displayPost.votes);
-    // Update local vote count if callback is provided
-    if (onLocalVoteUpdate) {
-      onLocalVoteUpdate(
-        displayPost.id,
-        hasVoted ? displayPost.votes - 1 : displayPost.votes + 1,
-      );
+  const handleVoteClick = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    try {
+      await onVoteClick(displayPost.id, displayPost.votes);
+    } catch (error) {
+      console.error('Error voting:', error);
+      toast.error('Failed to update vote');
     }
   };
 
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
-    if (
-      !trimmed ||
-      !wallet.connected ||
-      !wallet.signMessage ||
-      !wallet.publicKey
-    ) {
+    if (!trimmed || !wallet.connected || !wallet.publicKey) {
       return;
     }
 
     try {
-      const msgBytes = new TextEncoder().encode(trimmed);
-      await wallet.signMessage(msgBytes);
-
       if (onComment) {
         const response = await onComment(displayPost.id, trimmed);
 
@@ -198,7 +196,7 @@ export function PostModal({
 
   const handleCommentVote = useCallback(
     async (commentId: string, currentVotes: number) => {
-      if (!wallet.connected || !wallet.publicKey || !wallet.signMessage) {
+      if (!wallet.connected || !wallet.publicKey) {
         toast.error('Please connect your wallet to vote');
         return;
       }
@@ -227,15 +225,12 @@ export function PostModal({
               return newSet;
             });
           } else {
-            // Add vote
-            const message = new TextEncoder().encode(
-              `Vote for comment: ${commentId}`,
-            );
-            const signature = await wallet.signMessage(message);
-            const signatureString = Buffer.from(signature).toString('base64');
+            // Add vote with cached signature
+            const signature =
+              signatureCacheService.get(wallet.publicKey.toString()) || '';
             await incrementCommentVote(
               commentId,
-              signatureString,
+              signature,
               wallet.publicKey.toString(),
             );
             setVotedComments((prev) => {

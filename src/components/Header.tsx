@@ -5,6 +5,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { LogOut, Plus, User, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { CreatePostModal } from './CreatePostModal';
+import { ProfileModal } from './ProfileModal';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ export function Header() {
   const { setVisible } = useWalletModal();
   const { connected, disconnect, publicKey } = useWallet();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   return (
     <>
@@ -57,10 +59,7 @@ export function Header() {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem
                       className="flex items-center space-x-2 cursor-pointer"
-                      onClick={() => {
-                        // Add profile view logic here
-                        console.log('View profile');
-                      }}
+                      onClick={() => setIsProfileModalOpen(true)}
                     >
                       <User className="w-4 h-4" />
                       <span>Profile</span>
@@ -76,8 +75,8 @@ export function Header() {
                 </DropdownMenu>
               ) : (
                 <button
-                  className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors w-48 bg-yellow-500 hover:bg-yellow-600 text-white"
                   type="button"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors w-48 bg-yellow-500 hover:bg-yellow-600 text-white"
                   onClick={() => setVisible(true)}
                 >
                   <Wallet className="w-5 h-5" />
@@ -89,11 +88,17 @@ export function Header() {
         </div>
       </header>
       {connected && publicKey && (
-        <CreatePostModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          walletAddress={publicKey.toString()}
-        />
+        <>
+          <CreatePostModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            walletAddress={publicKey.toString()}
+          />
+          <ProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+          />
+        </>
       )}
     </>
   );

@@ -17,9 +17,21 @@ export function supabaseClient() {
   if (typeof window === 'undefined') {
     if (!supabaseServerInstance) {
       const serverEnv = getServerEnv();
+      // Create a new Supabase client with the service role key
       supabaseServerInstance = createClient(
         serverEnv.NEXT_PUBLIC_SUPABASE_URL,
         serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+          global: {
+            headers: {
+              Authorization: `Bearer ${serverEnv.SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+          },
+        },
       );
     }
     return supabaseServerInstance;
