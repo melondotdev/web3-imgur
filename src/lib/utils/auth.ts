@@ -42,7 +42,17 @@ export function generateCodeVerifier(): string {
   );
 }
 
-export function generateCodeChallenge(verifier: string): string {
-  // For simplicity we're using 'plain' method, but in production you should use 'S256'
-  return verifier;
+export async function generateCodeChallenge(verifier: string): Promise<string> {
+  // In production, we should use S256, but for this example we'll use plain
+  // To use S256, uncomment the following code:
+  /*
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  */
+  return verifier; // Using plain method for simplicity
 }

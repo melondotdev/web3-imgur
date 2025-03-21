@@ -30,6 +30,13 @@ export async function GET(request: Request) {
     !codeVerifier ||
     state !== storedState
   ) {
+    console.error('Invalid auth parameters:', {
+      hasCode: !!code,
+      hasState: !!state,
+      hasStoredState: !!storedState,
+      hasCodeVerifier: !!codeVerifier,
+      stateMatch: state === storedState,
+    });
     return errorResponse;
   }
 
@@ -55,7 +62,8 @@ export async function GET(request: Request) {
     );
 
     if (!tokenResponse.ok) {
-      console.error('Token response error:', await tokenResponse.text());
+      const errorText = await tokenResponse.text();
+      console.error('Token response error:', errorText);
       throw new Error('Failed to get access token');
     }
 
@@ -74,7 +82,7 @@ export async function GET(request: Request) {
         twitter_handle: userInfo.username,
         username: userInfo.name,
         avatar: userInfo.profile_image_url,
-        twitter_refresh_token: refresh_token, // Store refresh token
+        twitter_refresh_token: refresh_token, // Store refresh token for later use
       })
       .eq('id', 'user_id'); // TODO: Get actual user ID from session
 

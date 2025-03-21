@@ -9,7 +9,7 @@ import { trimAddress } from '@/lib/utils/trim-address';
 import { ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { FaXTwitter } from 'react-icons/fa6';
 
@@ -20,7 +20,6 @@ interface ProfileModalProps {
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { profile, isLoading, error, updateProfile } = useUserProfile();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -31,11 +30,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       console.error('Failed to authenticate with X');
     }
   }, [searchParams]);
-
-  const handleXConnect = () => {
-    // Redirect to X auth endpoint
-    router.push('/api/auth/x');
-  };
 
   const handleXUnlink = async () => {
     try {
@@ -102,10 +96,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
             {/* X Section */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <FaXTwitter className="w-5 h-5 text-gray-100" />
-                <h4 className="text-sm font-medium text-gray-300">X</h4>
-              </div>
               {profile.twitter_handle ? (
                 <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg">
                   <Link
@@ -126,14 +116,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleXConnect}
+                <Link
+                  href="/api/auth/x"
                   className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 px-4 rounded-lg hover:bg-gray-950 border border-gray-800 transition-all hover:border-gray-700"
                 >
                   <FaXTwitter className="w-4 h-4" />
                   <span className="font-medium">Connect X</span>
-                </button>
+                </Link>
               )}
             </div>
 
