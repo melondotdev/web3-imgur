@@ -1,76 +1,85 @@
 import { getServerEnv } from '@/lib/config/server-env';
 import { supabaseClient } from '@/lib/config/supabase';
-import { getXUserInfo } from '@/lib/x/user-info';
+import { generateOAuthHeader } from '@/lib/utils/auth';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const env = getServerEnv();
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get('code');
-  const state = searchParams.get('state');
+  const oauthToken = searchParams.get('oauth_token');
+  const oauthVerifier = searchParams.get('oauth_verifier');
 
-  // Get stored state and code verifier from cookies
+  // Get stored tokens from cookies
   const cookieStore = await cookies();
-  const storedState = cookieStore.get('x_auth_state')?.value;
-  const codeVerifier = cookieStore.get('x_code_verifier')?.value;
+  const storedToken = cookieStore.get('x_request_token')?.value;
+  const storedTokenSecret = cookieStore.get('x_request_token_secret')?.value;
 
   // Create response for error case
   const errorResponse = NextResponse.redirect(
-    `${env.NEXT_PUBLIC_APP_URL}/profile?error=x_auth_failed`,
+    `${env.NEXT_PUBLIC_APP_URL}/?error=x_auth_failed`,
   );
   errorResponse.cookies.delete('x_auth_state');
-  errorResponse.cookies.delete('x_code_verifier');
+  errorResponse.cookies.delete('x_request_token');
+  errorResponse.cookies.delete('x_request_token_secret');
 
-  // Validate state, code, and code verifier
+  // Validate tokens
   if (
-    !code ||
-    !state ||
-    !storedState ||
-    !codeVerifier ||
-    state !== storedState
+    !oauthToken ||
+    !oauthVerifier ||
+    !storedToken ||
+    !storedTokenSecret ||
+    oauthToken !== storedToken
   ) {
     console.error('Invalid auth parameters:', {
-      hasCode: !!code,
-      hasState: !!state,
-      hasStoredState: !!storedState,
-      hasCodeVerifier: !!codeVerifier,
-      stateMatch: state === storedState,
+      hasOAuthToken: !!oauthToken,
+      hasOAuthVerifier: !!oauthVerifier,
+      hasStoredToken: !!storedToken,
+      hasStoredTokenSecret: !!storedTokenSecret,
+      tokenMatch: oauthToken === storedToken,
     });
     return errorResponse;
   }
 
   try {
-    // Exchange code for access token
-    const tokenResponse = await fetch(
-      'https://api.twitter.com/2/oauth2/token',
+    // Exchange request token for access token
+    const accessTokenUrl = 'https://api.x.com/oauth/access_token';
+    const oauthHeader = await generateOAuthHeader(
+      'POST',
+      accessTokenUrl,
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Basic ${Buffer.from(
-            `${env.X_CLIENT_ID}:${env.X_CLIENT_SECRET}`,
-          ).toString('base64')}`,
-        },
-        body: new URLSearchParams({
-          code,
-          grant_type: 'authorization_code',
-          redirect_uri: `${env.NEXT_PUBLIC_APP_URL}/api/auth/x/callback`,
-          code_verifier: codeVerifier,
-        }),
+        oauth_token: oauthToken,
+        oauth_verifier: oauthVerifier,
       },
+      env.X_CLIENT_ID,
+      env.X_CLIENT_SECRET,
+      storedTokenSecret,
     );
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('Token response error:', errorText);
+    const accessTokenResponse = await fetch(accessTokenUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: oauthHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    if (!accessTokenResponse.ok) {
+      const errorText = await accessTokenResponse.text();
+      console.error('Access token response error:', errorText);
       throw new Error('Failed to get access token');
     }
 
-    const { access_token, refresh_token } = await tokenResponse.json();
+    const responseText = await accessTokenResponse.text();
+    const params = new URLSearchParams(responseText);
+    const accessToken = params.get('oauth_token');
+    const accessTokenSecret = params.get('oauth_token_secret');
+    const screenName = params.get('screen_name');
+    const userId = params.get('user_id');
 
-    // Get user info from X
-    const userInfo = await getXUserInfo(access_token);
+    if (!accessToken || !accessTokenSecret || !screenName || !userId) {
+      throw new Error('Missing required tokens in response');
+    }
 
     // Get Supabase client instance
     const supabase = supabaseClient();
@@ -79,10 +88,10 @@ export async function GET(request: Request) {
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        twitter_handle: userInfo.username,
-        username: userInfo.name,
-        avatar: userInfo.profile_image_url,
-        twitter_refresh_token: refresh_token, // Store refresh token for later use
+        twitter_handle: screenName,
+        twitter_user_id: userId,
+        twitter_access_token: accessToken,
+        twitter_access_token_secret: accessTokenSecret,
       })
       .eq('id', 'user_id'); // TODO: Get actual user ID from session
 
@@ -92,10 +101,11 @@ export async function GET(request: Request) {
 
     // Create success response
     const response = NextResponse.redirect(
-      `${env.NEXT_PUBLIC_APP_URL}/profile`,
+      `${env.NEXT_PUBLIC_APP_URL}/?auth=success`,
     );
     response.cookies.delete('x_auth_state');
-    response.cookies.delete('x_code_verifier');
+    response.cookies.delete('x_request_token');
+    response.cookies.delete('x_request_token_secret');
     return response;
   } catch (error) {
     console.error('X callback error:', error);
