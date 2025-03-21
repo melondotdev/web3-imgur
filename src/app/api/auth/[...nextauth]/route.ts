@@ -10,6 +10,13 @@ const handler = NextAuth({
       clientId: env.X_CLIENT_ID,
       clientSecret: env.X_CLIENT_SECRET,
       version: '2.0',
+      profile(profile) {
+        return {
+          id: profile.data.id,
+          name: profile.data.username,
+          image: profile.data.profile_image_url,
+        };
+      },
     }),
   ],
   callbacks: {
@@ -17,14 +24,12 @@ const handler = NextAuth({
       // Persist the OAuth access_token and oauth_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token as string;
-        token.oauthToken = account.oauth_token as string;
       }
       return token;
     },
     async session({ session, token }) {
       // Send properties to the client
       session.accessToken = token.accessToken;
-      session.oauthToken = token.oauthToken;
       return session;
     },
   },
