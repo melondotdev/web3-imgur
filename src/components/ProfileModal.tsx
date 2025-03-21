@@ -43,6 +43,10 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   };
 
+  const handleXConnect = () => {
+    window.location.href = '/api/auth/x';
+  };
+
   const getSolscanUrl = (address: string) =>
     `https://solscan.io/account/${address}`;
 
@@ -116,13 +120,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/api/auth/x"
+                <button
+                  type="button"
+                  onClick={handleXConnect}
                   className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 px-4 rounded-lg hover:bg-gray-950 border border-gray-800 transition-all hover:border-gray-700"
                 >
                   <FaXTwitter className="w-4 h-4" />
                   <span className="font-medium">Connect X</span>
-                </Link>
+                </button>
               )}
             </div>
 
