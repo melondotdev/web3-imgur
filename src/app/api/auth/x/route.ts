@@ -14,7 +14,7 @@ export async function GET() {
 
   // Create response with redirect
   const response = NextResponse.redirect(
-    `https://twitter.com/i/oauth2/authorize?${new URLSearchParams({
+    `https://x.com/i/oauth2/authorize?${new URLSearchParams({
       response_type: 'code',
       client_id: env.X_CLIENT_ID,
       redirect_uri: `${env.NEXT_PUBLIC_APP_URL}/api/auth/x/callback`,
