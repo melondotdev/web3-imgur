@@ -15,6 +15,7 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaXTwitter } from 'react-icons/fa6';
+import { toast } from 'sonner';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -92,7 +93,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             ) : (
               <button
                 type="button"
-                onClick={() => signIn('twitter')}
+                onClick={async () => {
+                  try {
+                    await signIn('twitter');
+                  } catch (error) {
+                    toast.error('Failed to connect to X', {
+                      description: 'Please try again later',
+                    });
+                  }
+                }}
                 className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 px-4 rounded-lg hover:bg-gray-950 border border-gray-800 transition-all hover:border-gray-700"
               >
                 <FaXTwitter className="w-4 h-4" />

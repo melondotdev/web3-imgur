@@ -24,7 +24,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { Search } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { CreatePostModal } from './CreatePostModal';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
@@ -263,7 +263,9 @@ export function Gallery() {
           setSelectedPost(originalSelectedPost);
 
           if (error instanceof Error) {
-            toast.error(error.message);
+            toast.error('Failed to vote', {
+              description: error.message,
+            });
           } else {
             toast.error('Failed to update vote');
           }
@@ -548,7 +550,9 @@ export function Gallery() {
       return formattedComment;
     } catch (error) {
       console.error('Failed to create comment:', error);
-      toast.error('Failed to post comment');
+      toast.error('Failed to post comment', {
+        description: 'Please try again later',
+      });
       throw error;
     }
   };

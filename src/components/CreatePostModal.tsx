@@ -7,12 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import {
   WithContext as ReactTags,
   SEPARATORS,
   type Tag,
 } from 'react-tag-input';
+import { toast } from 'sonner';
+
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -66,7 +67,9 @@ export function CreatePostModal({
         window.location.reload();
       }, 500);
     } catch (error) {
-      toast.error(`Error creating post: ${JSON.stringify(error)}`);
+      toast.error('Error creating post', {
+        description: error instanceof Error ? error.message : String(error),
+      });
     }
   };
 
