@@ -5,6 +5,7 @@ import TwitterProvider from 'next-auth/providers/twitter';
 const env = getServerEnv();
 
 const handler = NextAuth({
+  secret: env.NEXTAUTH_SECRET,
   providers: [
     TwitterProvider({
       clientId: env.X_CLIENT_ID,
@@ -17,8 +18,14 @@ const handler = NextAuth({
           image: profile.data.profile_image_url,
         };
       },
+      authorization: {
+        params: {
+          scope: 'users.read tweet.read offline.access',
+        },
+      },
     }),
   ],
+  debug: true, // Enable debug logs
   callbacks: {
     async jwt({ token, account }) {
       // Persist the OAuth access_token and oauth_token to the token right after signin
