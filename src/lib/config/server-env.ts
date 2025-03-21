@@ -7,8 +7,6 @@ const serverEnvSchema = z.object({
   PINATA_JWT: z.string().min(1),
   NEXT_PUBLIC_GATEWAY_URL: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url(),
-  X_CLIENT_ID: z.string().min(1),
-  X_CLIENT_SECRET: z.string().min(1),
   NEXTAUTH_SECRET: z.string(),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])

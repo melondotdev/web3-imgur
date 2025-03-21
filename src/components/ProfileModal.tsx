@@ -1,5 +1,4 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -7,7 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getSolscanAccountUrl } from '@/lib/utils/solana';
 import { trimAddress } from '@/lib/utils/trim-address';
+import { getXUserUrl } from '@/lib/utils/x';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { ExternalLink } from 'lucide-react';
 import { signIn, signOut, useSession } from 'next-auth/react';
@@ -23,9 +24,6 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { data: session, status } = useSession();
   const { publicKey } = useWallet();
-
-  const getSolscanUrl = (address: string) =>
-    `https://solscan.io/account/${address}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -72,15 +70,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto" />
                 <p className="mt-2 text-gray-400">Loading profile...</p>
               </div>
-            ) : session ? (
+            ) : session?.user?.name ? (
               <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg">
                 <Link
-                  href={`https://x.com/${session.user?.name}`}
+                  href={getXUserUrl(session.user.name)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 hover:text-white transition-colors flex items-center gap-2 group"
                 >
-                  @{session.user?.name}
+                  @{session.user.name}
                   <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
                 <Button
@@ -114,7 +112,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   {publicKey.toString()}
                 </p>
                 <Link
-                  href={getSolscanUrl(publicKey.toString())}
+                  href={getSolscanAccountUrl(publicKey.toString())}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-2 text-yellow-500 hover:text-yellow-400 transition-colors"

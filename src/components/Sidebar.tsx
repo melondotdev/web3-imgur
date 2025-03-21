@@ -1,3 +1,4 @@
+'use client';
 import { Egg, Flame, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -29,6 +30,7 @@ const tabs: Tab[] = [
   },
 ];
 
+// TODO Replace with Navigation Menu
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState('Discover');
 
