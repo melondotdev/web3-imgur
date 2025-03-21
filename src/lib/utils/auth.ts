@@ -33,3 +33,16 @@ export async function getXUserInfo(
 
   return response.json();
 }
+
+export function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
+}
+
+export function generateCodeChallenge(verifier: string): string {
+  // For simplicity we're using 'plain' method, but in production you should use 'S256'
+  return verifier;
+}
