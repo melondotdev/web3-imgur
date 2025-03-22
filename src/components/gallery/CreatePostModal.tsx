@@ -1,25 +1,8 @@
 import { Modal } from '@/components/base/Modal';
-import { createPost } from '@/lib/services/request/post-service';
-import type { CreatePostForm } from '@/lib/types/form/create-post-form';
-import type { Post } from '@/lib/types/post';
-import { createPostSchema } from '@/lib/types/request/create-post-request';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useCreatePost } from '@/lib/hooks/create-post/use-create-post';
+import type { CreatePostModalProps } from '@/lib/types/gallery/create-post-modal';
 import { Upload, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import {
-  WithContext as ReactTags,
-  SEPARATORS,
-  type Tag,
-} from 'react-tag-input';
-import { toast } from 'sonner';
-
-interface CreatePostModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  walletAddress: string;
-  onPostCreated?: (newPost: Post) => void;
-}
+import { WithContext as ReactTags, SEPARATORS } from 'react-tag-input';
 
 export function CreatePostModal({
   isOpen,
@@ -27,103 +10,22 @@ export function CreatePostModal({
   walletAddress,
   onPostCreated,
 }: CreatePostModalProps) {
-  const [preview, setPreview] = useState('');
-  const [tags, setTags] = useState<Tag[]>([]);
-
   const {
+    preview,
+    tags,
+    handleDelete,
+    handleAddition,
+    onImageChange,
+    onRemoveImage,
+    onSubmit,
     register,
-    handleSubmit,
-    setValue,
-    resetField,
-    setError,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<CreatePostForm>({
-    resolver: zodResolver(createPostSchema),
-  });
-
-  const onSubmit = async (data: CreatePostForm) => {
-    try {
-      const file =
-        data.image instanceof FileList ? data.image[0] : (data.image as File);
-
-      const formData = new FormData();
-      formData.append('title', data.title);
-      formData.append('username', data.username);
-      formData.append('image', file);
-      formData.append('tags', JSON.stringify(tags.map((tag) => tag.text)));
-
-      const newPost = await createPost(formData);
-
-      if (onPostCreated) {
-        onPostCreated(newPost);
-      }
-
-      reset();
-      setPreview('');
-      setTags([]);
-      onClose();
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } catch (error) {
-      toast.error('Error creating post', {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
-
-  const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setValue('image', file, { shouldValidate: true });
-      setPreview(URL.createObjectURL(file));
-    } else {
-      setError('image', { message: 'Image is required' });
-    }
-  };
-
-  const onRemoveImage = () => {
-    resetField('image');
-    setPreview('');
-  };
-
-  useEffect(() => {
-    // For debugging
-    console.log(
-      'Setting tags:',
-      tags.map((tag) => tag.text),
-    );
-    setValue(
-      'tags',
-      tags.map((tag) => tag.text),
-      { shouldValidate: true },
-    );
-  }, [tags, setValue]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setValue('username', walletAddress);
-    }
-  }, [walletAddress, setValue, isOpen]);
-
-  const handleDelete = (index: number) => {
-    setTags((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAddition = (tag: Tag) => {
-    setTags((prev) => [
-      ...prev,
-      { id: tag.text, text: tag.text, className: '' },
-    ]);
-  };
+    errors,
+    isSubmitting,
+  } = useCreatePost(walletAddress, onClose, onPostCreated);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="mx-auto p-6 w-full max-w-2xl"
-      >
+      <form onSubmit={onSubmit} className="mx-auto p-6 w-full max-w-2xl">
         <h2 className="mb-6 text-xl text-yellow-500">create new post</h2>
         <div className="space-y-4">
           {preview ? (
@@ -174,7 +76,6 @@ export function CreatePostModal({
             <p className="text-red-500 text-sm">{errors.title.message}</p>
           )}
 
-          {/* React Tag Input */}
           <div>
             <label htmlFor="tags-input" className="block text-yellow-500 mb-2">
               add tags (optional)
@@ -182,7 +83,6 @@ export function CreatePostModal({
             <ReactTags
               id="tags-input"
               tags={tags}
-              // TODO: Add suggestions
               suggestions={[]}
               allowDragDrop={false}
               separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
