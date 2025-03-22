@@ -8,8 +8,8 @@ const env = getServerEnv();
 export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
     Twitter({
-      clientId: env.TWITTER_CLIENT_ID,
-      clientSecret: env.TWITTER_CLIENT_SECRET,
+      clientId: env.AUTH_CLIENT_ID,
+      clientSecret: env.AUTH_CLIENT_SECRET,
     }),
   ],
   callbacks: {
