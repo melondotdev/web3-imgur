@@ -14,6 +14,7 @@ export interface PostModalProps {
   localPost?: Post;
   onLocalVoteUpdate?: (postId: string, newVoteCount: number) => void;
   loadedImages?: Map<string, string>;
+  returnRoute?: string;
 }
 
 export interface CommentsSectionProps {

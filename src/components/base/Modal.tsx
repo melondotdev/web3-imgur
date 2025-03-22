@@ -6,15 +6,21 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  returnRoute?: string;
 }
 
-export function Modal({ isOpen, onClose, children }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  children,
+  returnRoute = '/',
+}: ModalProps) {
   const router = useRouter();
 
   const handleClose = useCallback(() => {
     onClose();
-    router.replace('/', { scroll: false });
-  }, [onClose, router]);
+    router.replace(returnRoute, { scroll: false });
+  }, [onClose, router, returnRoute]);
 
   // Close on escape key
   useEffect(() => {

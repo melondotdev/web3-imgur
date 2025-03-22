@@ -28,6 +28,7 @@ export function Gallery({
   const [isOpen, setIsOpen] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const defaultRoute = defaultTag ? `/${defaultTag}hub` : '';
 
   const { posts, loading, hasMore, handleLoadMore, handleNewPost, setPosts } =
     usePostLoading({ sortBy, defaultTag });
@@ -70,20 +71,25 @@ export function Gallery({
   const handlePostSelect = useCallback(
     async (post: Post) => {
       await originalHandlePostSelect(post);
-      if (pathname !== `/${post.id}`) {
-        router.replace(`/${post.id}`, { scroll: false });
+      if (pathname !== `${defaultRoute}/${post.id}`) {
+        router.replace(`${defaultRoute}/${post.id}`, { scroll: false });
       }
     },
-    [originalHandlePostSelect, pathname, router],
+    [originalHandlePostSelect, pathname, router, defaultRoute],
   );
 
   // Handle URL changes from browser navigation
   useEffect(() => {
-    const postId = pathname.slice(1); // Remove leading slash
-    if (!postId) {
+    const path = pathname.slice(1); // Remove leading slash
+    if (!path) {
       setSelectedPost(null);
       return;
     }
+
+    // If we have a defaultRoute, the post ID will be after it
+    const postId = defaultRoute
+      ? path.replace(`${defaultRoute.slice(1)}/`, '')
+      : path;
 
     if (postId !== selectedPost?.id && posts.length > 0) {
       const post = posts.find((p) => p.id === postId);
@@ -91,13 +97,19 @@ export function Gallery({
         originalHandlePostSelect(post);
       }
     }
-  }, [pathname, posts, selectedPost?.id, originalHandlePostSelect]);
+  }, [
+    pathname,
+    posts,
+    selectedPost?.id,
+    originalHandlePostSelect,
+    defaultRoute,
+  ]);
 
   // Handle modal close
   const handleModalClose = useCallback(() => {
     setSelectedPost(null);
-    router.replace('/', { scroll: false });
-  }, [router, setSelectedPost]);
+    router.replace(defaultRoute || '/', { scroll: false });
+  }, [router, setSelectedPost, defaultRoute]);
 
   // Handle initial post loading from URL
   useEffect(() => {
@@ -195,6 +207,7 @@ export function Gallery({
             isVoting={isVoting}
             loadedImages={loadedImages}
             onLocalVoteUpdate={handlePostModalVoteUpdate}
+            returnRoute={defaultRoute || '/'}
           />
         )}
 

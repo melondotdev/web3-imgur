@@ -7,7 +7,9 @@ interface FlameHubPostPageProps {
   };
 }
 
-export default function FlameHubPostPage({ params }: FlameHubPostPageProps) {
+export default async function FlameHubPostPage({
+  params,
+}: FlameHubPostPageProps) {
   return (
     <MainLayout>
       <FlameHub initialPostId={params.postId} />
