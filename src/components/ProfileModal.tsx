@@ -96,7 +96,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 onClick={async () => {
                   try {
                     await signIn('twitter');
-                  } catch (error) {
+                  } catch {
                     toast.error('Failed to connect to X', {
                       description: 'Please try again later',
                     });

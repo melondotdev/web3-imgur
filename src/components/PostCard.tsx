@@ -47,7 +47,6 @@ export function PostCard({
 
   return (
     <div
-      // biome-ignore lint/a11y/useSemanticElements: <explanation>
       role="button"
       onClick={() => onClick(post)}
       onKeyDown={handleKeyPress}
