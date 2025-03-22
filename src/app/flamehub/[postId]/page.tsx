@@ -1,7 +1,8 @@
 import { MainLayout } from '@/components/layouts/MainLayout';
-import { Main } from '@/components/pages/Main';
+import { FlameHub } from '@/components/pages/FlameHub';
 import { getAllPosts } from '@/lib/services/db/get-all-posts';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 type Props = {
   params: Promise<{ postId: string }>;
@@ -25,24 +26,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const imageUrl = post.imageUrl.startsWith('http')
     ? post.imageUrl
     : `${baseUrl}${post.imageUrl}`;
-
-  // Check if post is from FlameHub (has 'flame' tag)
-  const isFlameHub = post.tags?.some((tag) => tag.toLowerCase() === 'flame');
-  const hubName = isFlameHub ? 'flamehub' : 'borkhub';
   const title = post.title;
-  const description = post.title; // You might want to add a separate description field to your posts
-  const url = `${baseUrl}/${post.id}`;
+  const description = post.title;
+  const url = `${baseUrl}/flamehub/${post.id}`;
 
   return {
-    title: `${title} | ${hubName}`,
+    title: `${title} | flamehub`,
     description,
     metadataBase: new URL(baseUrl),
     openGraph: {
       type: 'website',
       url,
-      title: `${title} | ${hubName}`,
+      title: `${title} | flamehub`,
       description,
-      siteName: hubName,
+      siteName: 'flamehub',
       images: [
         {
           url: imageUrl,
@@ -52,13 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
       ],
     },
-    // Only specify Twitter-specific properties
     twitter: {
       card: 'summary_large_image',
-      site: '@borkinstitute',
-      creator:
-        post.user?.twitter_handle ||
-        (isFlameHub ? '@theflamesolana' : '@borkinstitute'),
+      site: '@theflamesolana',
+      creator: post.user?.twitter_handle || '@theflamesolana',
     },
     alternates: {
       canonical: url,
@@ -66,11 +60,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PostPage({ params }: Props) {
+export default async function FlameHubPostPage({ params }: Props) {
   const resolvedParams = await params;
   return (
     <MainLayout>
-      <Main initialPostId={resolvedParams.postId} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <FlameHub initialPostId={resolvedParams.postId} />
+      </Suspense>
     </MainLayout>
   );
 }

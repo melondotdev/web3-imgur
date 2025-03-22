@@ -42,33 +42,35 @@ export const PostHeader = ({
                   trimUsername(displayPost.username)}
               </button>
             </h3>
-            <span className="text-sm text-gray-400">
-              {new Date(displayPost.createdAt).toLocaleDateString()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">
+                {new Date(displayPost.createdAt).toLocaleDateString()}
+              </span>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild={true}>
+                  <button
+                    type="button"
+                    className="p-1 text-gray-400 hover:text-white transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="bg-gray-900 border-white/10"
+                  sideOffset={5}
+                >
+                  <DropdownMenuItem
+                    onSelect={() => handleReport('post', displayPost.id)}
+                    className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report Post
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild={true}>
-            <button
-              type="button"
-              className="p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="bg-gray-900 border-white/10"
-            sideOffset={5}
-          >
-            <DropdownMenuItem
-              onSelect={() => handleReport('post', displayPost.id)}
-              className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
-            >
-              <Flag className="w-4 h-4 mr-2" />
-              Report Post
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       {displayPost.title && (
         <p className="mt-3 text-white/90 text-sm">{displayPost.title}</p>

@@ -10,13 +10,15 @@ import type { Post } from '@/lib/types/post';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Sidebar } from '../Sidebar';
 import { PostModal } from '../post/PostModal';
 import { CreatePostModal } from './CreatePostModal';
 import { GalleryHeader } from './GalleryHeader';
 import { PostCard } from './PostCard';
 
-export function Gallery({ initialPostId }: { initialPostId?: string }) {
+export function Gallery({
+  initialPostId,
+  defaultTag,
+}: { initialPostId?: string; defaultTag?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const wallet = useWallet();
@@ -25,9 +27,10 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const defaultRoute = defaultTag ? `/${defaultTag}hub` : '';
 
   const { posts, loading, hasMore, handleLoadMore, handleNewPost, setPosts } =
-    usePostLoading(sortBy);
+    usePostLoading({ sortBy, defaultTag });
   const { loadedImages, handleImageLoad, preloadImage } = useImagePreload();
   const { columnCount, columnWidth } = useColumnLayout();
 
@@ -61,26 +64,31 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
     setTagSearch,
     getFilteredPosts,
     getFilteredTags,
-  } = useTags({ posts });
+  } = useTags({ posts, defaultTag });
 
   // Wrap handlePostSelect to handle both post selection and URL update
   const handlePostSelect = useCallback(
     async (post: Post) => {
       await originalHandlePostSelect(post);
-      if (pathname !== `/${post.id}`) {
-        router.replace(`/${post.id}`, { scroll: false });
+      if (pathname !== `${defaultRoute}/${post.id}`) {
+        router.replace(`${defaultRoute}/${post.id}`, { scroll: false });
       }
     },
-    [originalHandlePostSelect, pathname, router],
+    [originalHandlePostSelect, pathname, router, defaultRoute],
   );
 
   // Handle URL changes from browser navigation
   useEffect(() => {
-    const postId = pathname.slice(1); // Remove leading slash
-    if (!postId) {
+    const path = pathname.slice(1); // Remove leading slash
+    if (!path) {
       setSelectedPost(null);
       return;
     }
+
+    // If we have a defaultRoute, the post ID will be after it
+    const postId = defaultRoute
+      ? path.replace(`${defaultRoute.slice(1)}/`, '')
+      : path;
 
     if (postId !== selectedPost?.id && posts.length > 0) {
       const post = posts.find((p) => p.id === postId);
@@ -88,13 +96,19 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
         originalHandlePostSelect(post);
       }
     }
-  }, [pathname, posts, selectedPost?.id, originalHandlePostSelect]);
+  }, [
+    pathname,
+    posts,
+    selectedPost?.id,
+    originalHandlePostSelect,
+    defaultRoute,
+  ]);
 
   // Handle modal close
   const handleModalClose = useCallback(() => {
     setSelectedPost(null);
-    router.replace('/', { scroll: false });
-  }, [router, setSelectedPost]);
+    router.replace(defaultRoute || '/', { scroll: false });
+  }, [router, setSelectedPost, defaultRoute]);
 
   // Handle initial post loading from URL
   useEffect(() => {
@@ -114,8 +128,7 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
 
   return (
     <div className="flex">
-      <Sidebar />
-      <main className="flex-1 ml-40 min-w-0">
+      <main className="flex-1 min-w-0">
         <GalleryHeader
           isSearchOpen={isSearchOpen}
           tagSearch={tagSearch}
@@ -192,6 +205,7 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
             isVoting={isVoting}
             loadedImages={loadedImages}
             onLocalVoteUpdate={handlePostModalVoteUpdate}
+            returnRoute={defaultRoute || '/'}
           />
         )}
 

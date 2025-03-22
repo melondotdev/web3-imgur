@@ -20,6 +20,7 @@ export function PostModal({
   isVoting,
   localPost,
   loadedImages,
+  returnRoute,
 }: PostModalProps) {
   // Use localPost if available, otherwise fall back to post prop
   const displayPost = localPost || post;
@@ -51,7 +52,7 @@ export function PostModal({
   });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} returnRoute={returnRoute}>
       {isOpen && (
         <div className="flex flex-col md:flex-row h-full">
           <ImageContainer

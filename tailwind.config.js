@@ -25,10 +25,15 @@ module.exports = {
             opacity: '0',
           },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
       },
       animation: {
         'zoom-in': 'zoom-in 0.2s ease-out',
         'zoom-out': 'zoom-out 0.2s ease-in',
+        marquee: 'marquee 20s linear infinite',
       },
       borderRadius: {
         lg: 'var(--radius)',

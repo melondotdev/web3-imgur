@@ -7,7 +7,12 @@ import type { Post } from '@/lib/types/post';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-export function usePostLoading(sortBy: PostSortOption) {
+interface UsePostLoadingProps {
+  sortBy: PostSortOption;
+  defaultTag?: string;
+}
+
+export function usePostLoading({ sortBy, defaultTag }: UsePostLoadingProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -23,7 +28,7 @@ export function usePostLoading(sortBy: PostSortOption) {
       setLoading(true);
 
       try {
-        const newPosts = await getAllPosts(sortBy, pageNum);
+        const newPosts = await getAllPosts(sortBy, pageNum, defaultTag);
 
         if (newPosts.length === 0) {
           setHasMore(false);
@@ -49,7 +54,7 @@ export function usePostLoading(sortBy: PostSortOption) {
         loadingRef.current = false;
       }
     },
-    [sortBy],
+    [sortBy, defaultTag],
   );
 
   const handleLoadMore = useCallback(() => {
@@ -61,12 +66,12 @@ export function usePostLoading(sortBy: PostSortOption) {
     setPosts((prev) => [newPost, ...prev]);
   }, []);
 
-  // Load initial posts when sortBy changes
+  // Load initial posts when sortBy or defaultTag changes
   useEffect(() => {
     setPage(0);
     setHasMore(true);
     loadPosts(0, true);
-  }, [sortBy, loadPosts]);
+  }, [sortBy, defaultTag, loadPosts]);
 
   return {
     posts,
