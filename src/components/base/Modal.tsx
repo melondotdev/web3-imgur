@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import { type ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useCallback, useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,10 +9,17 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, children }: ModalProps) {
+  const router = useRouter();
+
+  const handleClose = useCallback(() => {
+    onClose();
+    router.replace('/', { scroll: false });
+  }, [onClose, router]);
+
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
 
     if (isOpen) {
@@ -24,39 +32,32 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Background overlay */}
-      <div
-        className="fixed inset-0 bg-black/80 z-50"
-        onClick={onClose}
-        onKeyDown={(e) => e.key === 'Enter' && onClose()}
-        role="button"
-        tabIndex={0}
-      />
-
-      {/* Modal panel */}
-      <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-        <div
-          className="w-full max-w-6xl h-[85vh] overflow-hidden rounded-lg bg-gray-900 relative"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white"
-            type="button"
-            aria-label="Close modal"
+      {/* Background overlay with click handler */}
+      <div className="fixed inset-0 bg-black/80 z-50" onClick={handleClose}>
+        {/* Modal panel */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-6xl h-[85vh] overflow-hidden rounded-lg bg-gray-900 relative"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
-            <X className="w-6 h-6" />
-          </button>
-          {children}
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white"
+              type="button"
+              aria-label="Close modal"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            {children}
+          </div>
         </div>
       </div>
     </>

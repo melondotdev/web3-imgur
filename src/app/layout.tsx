@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   ),
   title: {
-    default: 'Web3 Imgur',
-    template: '%s | Web3 Imgur',
+    default: 'borkhub',
+    template: '%s | borkhub',
   },
   description: 'A decentralized image sharing platform',
   openGraph: {
     type: 'website',
-    siteName: 'Web3 Imgur',
+    siteName: 'borkhub',
   },
 };
 
