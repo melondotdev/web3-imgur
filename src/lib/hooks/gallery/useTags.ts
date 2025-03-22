@@ -12,6 +12,17 @@ export function useTags({ posts, defaultTag }: UseTagsProps) {
   const [selectedTag, setSelectedTag] = useState<string>(defaultTag || 'all');
   const [tagSearch, setTagSearch] = useState('');
 
+  // Helper function for case-insensitive tag comparison
+  const hasTag = (
+    postTags: string[] | undefined,
+    tagToFind: string,
+  ): boolean => {
+    if (!postTags) return false;
+    return postTags.some(
+      (tag) => tag.toLowerCase() === tagToFind.toLowerCase(),
+    );
+  };
+
   useEffect(() => {
     const calculateTagCounts = () => {
       // Create a map to store tag counts
@@ -21,7 +32,10 @@ export function useTags({ posts, defaultTag }: UseTagsProps) {
       for (const post of posts) {
         if (post.tags) {
           for (const tag of post.tags) {
-            tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1);
+            tagCountMap.set(
+              tag.toLowerCase(),
+              (tagCountMap.get(tag.toLowerCase()) || 0) + 1,
+            );
           }
         }
       }
@@ -51,9 +65,9 @@ export function useTags({ posts, defaultTag }: UseTagsProps) {
 
   const handleSetSelectedTag = (tag: string) => {
     if (defaultTag) {
-      const postsWithTag = posts.filter((post) => post.tags?.includes(tag));
+      const postsWithTag = posts.filter((post) => hasTag(post.tags, tag));
       const postsWithDefaultTag = postsWithTag.filter((post) =>
-        post.tags?.includes(defaultTag),
+        hasTag(post.tags, defaultTag),
       );
       if (postsWithDefaultTag.length > 0) {
         setSelectedTag(tag);
@@ -68,13 +82,16 @@ export function useTags({ posts, defaultTag }: UseTagsProps) {
 
     // Only count tags from posts that include the defaultTag if it's present
     const relevantPosts = defaultTag
-      ? posts.filter((post) => post.tags?.includes(defaultTag))
+      ? posts.filter((post) => hasTag(post.tags, defaultTag))
       : posts;
 
     for (const post of relevantPosts) {
       if (post.tags) {
         for (const tag of post.tags) {
-          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+          tagCounts.set(
+            tag.toLowerCase(),
+            (tagCounts.get(tag.toLowerCase()) || 0) + 1,
+          );
         }
       }
     }
@@ -90,13 +107,13 @@ export function useTags({ posts, defaultTag }: UseTagsProps) {
   const getFilteredPosts = (postsToFilter: Post[]): Post[] => {
     // If defaultTag is present, always filter by it
     const defaultTagFiltered = defaultTag
-      ? postsToFilter.filter((post) => post.tags?.includes(defaultTag))
+      ? postsToFilter.filter((post) => hasTag(post.tags, defaultTag))
       : postsToFilter;
 
     // Then apply the selected tag filter if it's not 'all'
     return selectedTag === 'all'
       ? defaultTagFiltered
-      : defaultTagFiltered.filter((post) => post.tags?.includes(selectedTag));
+      : defaultTagFiltered.filter((post) => hasTag(post.tags, selectedTag));
   };
 
   return {

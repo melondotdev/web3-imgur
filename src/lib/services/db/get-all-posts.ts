@@ -42,7 +42,7 @@ export async function getAllPosts(
           )
         )
       `)
-      .eq('post_tags.tags.name', tag);
+      .ilike('post_tags.tags.name', tag);
   }
 
   // Apply pagination
