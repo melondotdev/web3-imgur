@@ -1,5 +1,3 @@
-import type { Comment } from '@/lib/types/post';
-
 export interface CreateCommentResponse {
   id: string;
   author: string;

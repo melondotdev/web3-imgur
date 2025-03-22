@@ -50,6 +50,15 @@ export const ActionBar = ({
         </div>
         <button
           type="button"
+          onClick={() => {
+            const postUrl = encodeURIComponent(window.location.href);
+            // You can customize the share text
+            const shareText = encodeURIComponent('Check out this post!');
+            window.open(
+              `https://twitter.com/intent/tweet?text=${shareText}&url=${postUrl}`,
+              '_blank',
+            );
+          }}
           className="text-gray-400 hover:text-white transition-colors ml-auto"
         >
           <Share2 className="w-6 h-6" />
