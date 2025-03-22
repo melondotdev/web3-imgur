@@ -1,20 +1,24 @@
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { Main } from '@/components/pages/Main';
 import { getAllPosts } from '@/lib/services/db/get-all-posts';
-import type { Metadata } from 'next';
+import type { Metadata, ResolvingMetadata } from 'next';
 
-interface PostPageProps {
-  params: {
-    postId: string;
-  };
-}
+type Props = {
+  params: Promise<{ postId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-export async function generateMetadata({
-  params,
-}: PostPageProps): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
   // Fetch post data
   const posts = await getAllPosts('newest');
-  const post = posts.find((p) => p.id === params.postId);
+  const resolvedParams = await params;
+  const post = posts.find((p) => p.id === resolvedParams.postId);
+
+  // optionally access and extend (rather than replace) parent metadata
+  const previousImages = (await parent).openGraph?.images || [];
 
   if (!post) {
     return {
@@ -36,6 +40,7 @@ export async function generateMetadata({
           height: 630,
           alt: post.title,
         },
+        ...previousImages,
       ],
     },
     twitter: {
@@ -47,10 +52,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function PostPage({ params }: PostPageProps) {
+export default async function PostPage({ params }: Props) {
+  const resolvedParams = await params;
   return (
     <MainLayout>
-      <Main initialPostId={params.postId} />
+      <Main initialPostId={resolvedParams.postId} />
     </MainLayout>
   );
 }
