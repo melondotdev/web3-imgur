@@ -27,27 +27,43 @@ export async function generateMetadata(
     };
   }
 
+  const imageUrl = post.imageUrl;
+  const title = post.title;
+  const description = post.title; // You might want to add a separate description field to your posts
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/${post.id}`;
+
   return {
-    title: post.title,
-    description: post.title,
+    title,
+    description,
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    ),
     openGraph: {
-      title: post.title,
-      description: post.title,
+      type: 'website',
+      url,
+      title,
+      description,
+      siteName: 'Web3 Imgur',
       images: [
         {
-          url: post.imageUrl,
+          url: imageUrl,
           width: 1200,
           height: 630,
-          alt: post.title,
+          alt: title,
         },
         ...previousImages,
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
-      description: post.title,
-      images: [post.imageUrl],
+      site: '@web3imgur', // Replace with your Twitter handle
+      creator: post.user?.twitter_handle || '@web3imgur', // Use post author's Twitter handle if available
+      title,
+      description,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: url,
     },
   };
 }
