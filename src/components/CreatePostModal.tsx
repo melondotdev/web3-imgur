@@ -1,5 +1,5 @@
 import { Modal } from '@/components/base/Modal';
-import { createPost } from '@/lib/services/post-service';
+import { createPost } from '@/lib/services/request/post-service';
 import type { CreatePostForm } from '@/lib/types/form/create-post-form';
 import type { Post } from '@/lib/types/post';
 import { createPostSchema } from '@/lib/types/request/create-post-request';

@@ -36,7 +36,8 @@
         "noUnusedImports": "error",
         "noUnusedPrivateClassMembers": "error",
         "noUnusedVariables": "error",
-        "useArrayLiterals": "error"
+        "useArrayLiterals": "error",
+        "useExhaustiveDependencies": "off"
       },
       "nursery": {
         "useSortedClasses": "off"

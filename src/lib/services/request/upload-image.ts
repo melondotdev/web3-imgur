@@ -1,5 +1,5 @@
 import { pinata } from '@/lib/config/pinata';
-import type { UploadInput } from '../types/upload';
+import type { UploadInput } from '@/lib/types/upload';
 
 export async function uploadImage(image: UploadInput): Promise<string> {
   try {

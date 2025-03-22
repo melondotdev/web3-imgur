@@ -1,13 +1,6 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cacheService } from '@/lib/services/cache-service';
-import { imageCacheService } from '@/lib/services/cache-service';
-import { signatureCacheService } from '@/lib/services/cache-service';
-import { createComment } from '@/lib/services/comment-service';
+import { cacheService } from '@/lib/services/cache/cache-service';
+import { imageCacheService } from '@/lib/services/cache/cache-service';
+import { signatureCacheService } from '@/lib/services/cache/cache-service';
 import {
   type PostSortOption,
   getAllPosts,
@@ -18,30 +11,18 @@ import {
   incrementVote,
   removeVote,
 } from '@/lib/services/db/upvote-service';
+import { createComment } from '@/lib/services/request/comment-service';
+import type { TagCount } from '@/lib/types/gallery/tag';
 import type { Comment, Post } from '@/lib/types/post';
 // import { useWallet } from '@suiet/wallet-kit';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Search } from 'lucide-react';
-import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CreatePostModal } from './CreatePostModal';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
 import { Sidebar } from './Sidebar';
-
-interface TagCount {
-  tag: string;
-  count: number;
-}
-
-const MAX_VISIBLE_TAGS = 10; // Adjust this number as needed
-
-function reorderPosts(posts: Post[], columnCount: number): Post[] {
-  // With CSS Grid, we don't need to reorder the posts
-  // Just return them in their original order
-  return posts;
-}
+import { GalleryHeader } from './gallery/GalleryHeader';
 
 export function Gallery() {
   const wallet = useWallet();
@@ -67,7 +48,6 @@ export function Gallery() {
     new Map(),
   );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [postCache, setPostCache] = useState<Map<string, Post>>(new Map());
   const postCacheRef = useRef<Map<string, Post>>(new Map());
 
   // Fetch voted posts only on initial load or wallet connect
@@ -103,20 +83,6 @@ export function Gallery() {
     },
     [wallet.connected, wallet.publicKey],
   );
-
-  // Initialize cache only once
-  useEffect(() => {
-    const cachedPosts = cacheService.get<Post[]>('all-posts');
-    if (cachedPosts) {
-      const postMap = new Map(cachedPosts.map((post) => [post.id, post]));
-      setPostCache(postMap);
-      postCacheRef.current = postMap;
-      if (!posts.length) {
-        // Only set posts if there are none
-        setPosts(cachedPosts);
-      }
-    }
-  }, []); // Empty dependency array
 
   // Update loadPosts to use ref instead of state
   const loadPosts = useCallback(
@@ -567,90 +533,17 @@ export function Gallery() {
     <div className="flex">
       <Sidebar />
       <main className="flex-1 ml-40 min-w-0">
-        <div className="mb-4 flex items-center gap-2 px-4">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              {isSearchOpen ? (
-                <input
-                  type="text"
-                  placeholder="Search tags..."
-                  value={tagSearch}
-                  onChange={(e) => setTagSearch(e.target.value)}
-                  className="w-48 px-3 py-1.5 text-sm border border-gray-700 rounded-full bg-transparent text-gray-300 focus:outline-none focus:border-gray-600"
-                  onBlur={() => {
-                    if (!tagSearch) {
-                      setIsSearchOpen(false);
-                    }
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsSearchOpen(true)}
-                  className="p-1.5 text-gray-400 hover:text-white transition-colors"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-              {/* Add the "All" tag */}
-              <button
-                type="button"
-                onClick={() => setSelectedTag('all')}
-                className={`shrink-0 px-3 py-1.5 text-sm rounded-full transition-colors ${
-                  selectedTag === 'all'
-                    ? 'bg-white/10 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                All
-              </button>
-              {filteredTags
-                .slice(0, tagSearch ? undefined : MAX_VISIBLE_TAGS)
-                .map(({ tag }) => (
-                  <button
-                    type="button"
-                    key={tag}
-                    onClick={() => setSelectedTag(tag)}
-                    className={`shrink-0 px-3 py-1.5 text-sm rounded-full transition-colors ${
-                      selectedTag === tag
-                        ? 'bg-white/10 text-white'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-            </div>
-          </div>
-
-          <div className="flex-grow" />
-
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 ml-6 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
-              <span className="text-sm">
-                {sortBy === 'newest' ? 'Latest Posts' : 'Most Voted'}
-              </span>
-              <ChevronDown className="w-4 h-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              <DropdownMenuItem
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => setSortBy('newest')}
-              >
-                <span>Latest Posts</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => setSortBy('most-voted')}
-              >
-                <span>Most Voted</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <GalleryHeader
+          isSearchOpen={isSearchOpen}
+          tagSearch={tagSearch}
+          setTagSearch={setTagSearch}
+          setIsSearchOpen={setIsSearchOpen}
+          selectedTag={selectedTag}
+          setSelectedTag={setSelectedTag}
+          filteredTags={filteredTags}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+        />
 
         <div
           style={
@@ -663,7 +556,7 @@ export function Gallery() {
           }
           className="px-4"
         >
-          {reorderPosts(getFilteredPosts(), columnCount).map((post) => (
+          {getFilteredPosts().map((post) => (
             <div
               key={post.id}
               style={{ width: columnWidth }}

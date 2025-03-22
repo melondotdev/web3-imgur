@@ -1,6 +1,6 @@
 import { createPost } from '@/lib/services/db/post-service';
 import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
-import { uploadImage } from '@/lib/services/upload-image';
+import { uploadImage } from '@/lib/services/request/upload-image';
 import { validateCreatePostRequest } from '@/lib/types/request/create-post-request';
 import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
 import { type NextRequest, NextResponse } from 'next/server';

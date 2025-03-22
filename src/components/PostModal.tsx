@@ -8,7 +8,7 @@ import {
 import {
   imageCacheService,
   signatureCacheService,
-} from '@/lib/services/cache-service';
+} from '@/lib/services/cache/cache-service';
 import {
   hasUserVotedComment,
   incrementCommentVote,
