@@ -1,6 +1,6 @@
 'use client';
 import type { Tab } from '@/lib/types/sidebar/tab';
-import { Egg, Flame, Home } from 'lucide-react';
+import { FileQuestion, Flame, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,9 +18,9 @@ const tabs: Tab[] = [
     disabled: false,
   },
   {
-    name: 'BorkHub',
-    icon: <Egg className="w-5 h-5" />,
-    href: '/borkhub',
+    name: '???',
+    icon: <FileQuestion className="w-5 h-5" />,
+    href: '/',
     disabled: true,
   },
 ];
@@ -55,7 +55,7 @@ export function Sidebar() {
   }, [pathname]);
 
   return (
-    <div className="fixed left-0 top-16 bottom-0 w-40 bg-black flex flex-col items-start py-4">
+    <div className="sticky top-0 w-40 bg-black flex flex-col items-start">
       {tabs.map((tab) =>
         tab.disabled ? (
           <div

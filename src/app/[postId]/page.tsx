@@ -25,20 +25,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const imageUrl = post.imageUrl.startsWith('http')
     ? post.imageUrl
     : `${baseUrl}${post.imageUrl}`;
+
+  // Check if post is from FlameHub (has 'flame' tag)
+  const isFlameHub = post.tags?.some((tag) => tag.toLowerCase() === 'flame');
+  const hubName = isFlameHub ? 'flamehub' : 'borkhub';
   const title = post.title;
   const description = post.title; // You might want to add a separate description field to your posts
   const url = `${baseUrl}/${post.id}`;
 
   return {
-    title,
+    title: `${title} | ${hubName}`,
     description,
     metadataBase: new URL(baseUrl),
     openGraph: {
       type: 'website',
       url,
-      title,
+      title: `${title} | ${hubName}`,
       description,
-      siteName: 'borkhub',
+      siteName: hubName,
       images: [
         {
           url: imageUrl,
@@ -52,7 +56,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: 'summary_large_image',
       site: '@borkinstitute',
-      creator: post.user?.twitter_handle || '@borkinstitute',
+      creator:
+        post.user?.twitter_handle ||
+        (isFlameHub ? '@theflamesolana' : '@borkinstitute'),
     },
     alternates: {
       canonical: url,

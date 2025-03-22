@@ -10,7 +10,6 @@ import type { Post } from '@/lib/types/post';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Sidebar } from '../Sidebar';
 import { PostModal } from '../post/PostModal';
 import { CreatePostModal } from './CreatePostModal';
 import { GalleryHeader } from './GalleryHeader';
@@ -129,8 +128,7 @@ export function Gallery({
 
   return (
     <div className="flex">
-      <Sidebar />
-      <main className="flex-1 ml-40 min-w-0">
+      <main className="flex-1 min-w-0">
         <GalleryHeader
           isSearchOpen={isSearchOpen}
           tagSearch={tagSearch}
