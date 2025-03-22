@@ -1,18 +1,18 @@
-import { useColumnLayout } from '@/lib/hooks/useColumnLayout';
-import { useComments } from '@/lib/hooks/useComments';
-import { useImagePreload } from '@/lib/hooks/useImagePreload';
-import { usePostLoading } from '@/lib/hooks/usePostLoading';
-import { usePostSelection } from '@/lib/hooks/usePostSelection';
-import { useTags } from '@/lib/hooks/useTags';
-import { useVotedPosts } from '@/lib/hooks/useVotedPosts';
+import { useColumnLayout } from '@/lib/hooks/gallery/useColumnLayout';
+import { useComments } from '@/lib/hooks/gallery/useComments';
+import { useImagePreload } from '@/lib/hooks/gallery/useImagePreload';
+import { usePostLoading } from '@/lib/hooks/gallery/usePostLoading';
+import { usePostSelection } from '@/lib/hooks/gallery/usePostSelection';
+import { useTags } from '@/lib/hooks/gallery/useTags';
+import { useVotedPosts } from '@/lib/hooks/gallery/useVotedPosts';
 import type { PostSortOption } from '@/lib/services/db/get-all-posts';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
 import { Sidebar } from '../Sidebar';
+import { PostModal } from '../post/PostModal';
 import { CreatePostModal } from './CreatePostModal';
 import { GalleryHeader } from './GalleryHeader';
 import { PostCard } from './PostCard';
-import { PostModal } from './PostModal';
 
 export function Gallery() {
   const wallet = useWallet();

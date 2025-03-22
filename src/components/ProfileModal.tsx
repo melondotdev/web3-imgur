@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useConnectTwitter } from '@/lib/hooks/useConnectTwitter';
+import { useConnectTwitter } from '@/lib/hooks/gallery/useConnectTwitter';
 import type { ProfileModalProps } from '@/lib/types/profile/profile';
 import { getSolscanAccountUrl } from '@/lib/utils/solana';
 import { trimAddress } from '@/lib/utils/trim-address';
