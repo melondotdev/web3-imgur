@@ -8,11 +8,11 @@ import { useVotedPosts } from '@/lib/hooks/useVotedPosts';
 import type { PostSortOption } from '@/lib/services/db/get-all-posts';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
+import { Sidebar } from '../Sidebar';
 import { CreatePostModal } from './CreatePostModal';
+import { GalleryHeader } from './GalleryHeader';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
-import { Sidebar } from './Sidebar';
-import { GalleryHeader } from './gallery/GalleryHeader';
 
 export function Gallery() {
   const wallet = useWallet();

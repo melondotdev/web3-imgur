@@ -12,10 +12,17 @@ export async function getAllPosts(
   sortBy: PostSortOption = 'newest',
   page = 0,
 ): Promise<Post[]> {
-  // Get posts with pagination
+  // Get posts with pagination and join with users table
   const query = supabasePublicClient()
     .from('posts')
-    .select('*')
+    .select(`
+      *,
+      user:users!username(
+        username,
+        avatar_url,
+        twitter_handle
+      )
+    `)
     .range(page * POSTS_PER_PAGE, (page + 1) * POSTS_PER_PAGE - 1);
 
   // Apply sorting based on parameter

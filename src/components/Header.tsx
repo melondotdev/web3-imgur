@@ -4,8 +4,8 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { LogOut, Plus, User, Wallet } from 'lucide-react';
 import { useState } from 'react';
-import { CreatePostModal } from './CreatePostModal';
 import { ProfileModal } from './ProfileModal';
+import { CreatePostModal } from './gallery/CreatePostModal';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import {
   DropdownMenu,
