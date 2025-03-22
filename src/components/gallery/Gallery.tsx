@@ -1,20 +1,24 @@
-import { useColumnLayout } from '@/lib/hooks/useColumnLayout';
-import { useComments } from '@/lib/hooks/useComments';
-import { useImagePreload } from '@/lib/hooks/useImagePreload';
-import { usePostLoading } from '@/lib/hooks/usePostLoading';
-import { usePostSelection } from '@/lib/hooks/usePostSelection';
-import { useTags } from '@/lib/hooks/useTags';
-import { useVotedPosts } from '@/lib/hooks/useVotedPosts';
+import { useColumnLayout } from '@/lib/hooks/gallery/useColumnLayout';
+import { useComments } from '@/lib/hooks/gallery/useComments';
+import { useImagePreload } from '@/lib/hooks/gallery/useImagePreload';
+import { usePostLoading } from '@/lib/hooks/gallery/usePostLoading';
+import { usePostSelection } from '@/lib/hooks/gallery/usePostSelection';
+import { useTags } from '@/lib/hooks/gallery/useTags';
+import { useVotedPosts } from '@/lib/hooks/gallery/useVotedPosts';
 import type { PostSortOption } from '@/lib/services/db/get-all-posts';
+import type { Post } from '@/lib/types/post';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { Sidebar } from '../Sidebar';
+import { PostModal } from '../post/PostModal';
 import { CreatePostModal } from './CreatePostModal';
 import { GalleryHeader } from './GalleryHeader';
 import { PostCard } from './PostCard';
-import { PostModal } from './PostModal';
 
-export function Gallery() {
+export function Gallery({ initialPostId }: { initialPostId?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const wallet = useWallet();
   const [sortBy, setSortBy] = useState<PostSortOption>('newest');
   const [scrollLoadingEnabled, setScrollLoadingEnabled] = useState(false);
@@ -30,7 +34,7 @@ export function Gallery() {
   const {
     selectedPost,
     setSelectedPost,
-    handlePostSelect,
+    handlePostSelect: originalHandlePostSelect,
     handlePostModalVoteUpdate,
   } = usePostSelection({
     posts,
@@ -58,6 +62,49 @@ export function Gallery() {
     getFilteredPosts,
     getFilteredTags,
   } = useTags({ posts });
+
+  // Wrap handlePostSelect to handle both post selection and URL update
+  const handlePostSelect = useCallback(
+    async (post: Post) => {
+      await originalHandlePostSelect(post);
+      if (pathname !== `/${post.id}`) {
+        router.replace(`/${post.id}`, { scroll: false });
+      }
+    },
+    [originalHandlePostSelect, pathname, router],
+  );
+
+  // Handle URL changes from browser navigation
+  useEffect(() => {
+    const postId = pathname.slice(1); // Remove leading slash
+    if (!postId) {
+      setSelectedPost(null);
+      return;
+    }
+
+    if (postId !== selectedPost?.id && posts.length > 0) {
+      const post = posts.find((p) => p.id === postId);
+      if (post) {
+        originalHandlePostSelect(post);
+      }
+    }
+  }, [pathname, posts, selectedPost?.id, originalHandlePostSelect]);
+
+  // Handle modal close
+  const handleModalClose = useCallback(() => {
+    setSelectedPost(null);
+    router.replace('/', { scroll: false });
+  }, [router, setSelectedPost]);
+
+  // Handle initial post loading from URL
+  useEffect(() => {
+    if (initialPostId && posts.length > 0) {
+      const post = posts.find((p) => p.id === initialPostId);
+      if (post) {
+        setSelectedPost(post);
+      }
+    }
+  }, [initialPostId, posts]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -138,7 +185,7 @@ export function Gallery() {
             post={selectedPost}
             comments={comments}
             isOpen={true}
-            onClose={() => setSelectedPost(null)}
+            onClose={handleModalClose}
             onComment={handleComment}
             onVoteClick={handleVoteClick}
             hasVoted={votedPosts.has(selectedPost.id)}

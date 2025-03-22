@@ -1,3 +1,5 @@
+'use client';
+
 import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import type { PropsWithChildren } from 'react';

@@ -80,17 +80,6 @@ export function PostCard({
             <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
               {displayName}
             </span>
-            {post.user?.twitter_handle && (
-              <a
-                href={`https://x.com/${post.user.twitter_handle}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="ml-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                @{post.user.twitter_handle}
-              </a>
-            )}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
             <button

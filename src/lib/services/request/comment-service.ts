@@ -1,5 +1,5 @@
-import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreateCommentRequest } from '@/lib/types/request/create-comment-request';
+import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreateCommentResponse } from '@/lib/types/response/create-comment-response';
 
 export async function createComment(
@@ -44,7 +44,7 @@ export async function createComment(
     author: commentData.author,
     content: commentData.content || data.text,
     createdAt: commentData.created_at || new Date().toISOString(), // Note: changed from createdAt to created_at
-    votes: commentData.votes || 0
+    votes: commentData.votes || 0,
   };
 
   // Validate the required fields

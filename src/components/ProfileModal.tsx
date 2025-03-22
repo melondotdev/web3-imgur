@@ -6,21 +6,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useConnectTwitter } from '@/lib/hooks/gallery/useConnectTwitter';
 import type { ProfileModalProps } from '@/lib/types/profile/profile';
 import { getSolscanAccountUrl } from '@/lib/utils/solana';
 import { trimAddress } from '@/lib/utils/trim-address';
 import { getXUserUrl } from '@/lib/utils/x';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { ExternalLink } from 'lucide-react';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaXTwitter } from 'react-icons/fa6';
-import { toast } from 'sonner';
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { data: session, status } = useSession();
   const { publicKey } = useWallet();
+  const { connectTwitter, isConnecting } = useConnectTwitter();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -62,10 +63,12 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
           {/* X Section */}
           <div className="space-y-2">
-            {status === 'loading' ? (
+            {status === 'loading' || isConnecting ? (
               <div className="py-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto" />
-                <p className="mt-2 text-gray-400">Loading profile...</p>
+                <p className="mt-2 text-gray-400">
+                  {isConnecting ? 'Connecting to X...' : 'Loading profile...'}
+                </p>
               </div>
             ) : session?.user?.name ? (
               <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg">
@@ -89,16 +92,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             ) : (
               <button
                 type="button"
-                onClick={async () => {
-                  try {
-                    await signIn('twitter');
-                  } catch {
-                    toast.error('Failed to connect to X', {
-                      description: 'Please try again later',
-                    });
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 px-4 rounded-lg hover:bg-gray-950 border border-gray-800 transition-all hover:border-gray-700"
+                onClick={connectTwitter}
+                disabled={isConnecting}
+                className="w-full flex items-center justify-center gap-2 bg-black text-white py-2.5 px-4 rounded-lg hover:bg-gray-950 border border-gray-800 transition-all hover:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaXTwitter className="w-4 h-4" />
                 <span className="font-medium">Connect X</span>
