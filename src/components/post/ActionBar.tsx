@@ -54,7 +54,7 @@ export const ActionBar = ({
             const postUrl = encodeURIComponent(window.location.href);
             // You can customize the share text
             const shareText = encodeURIComponent(
-              'Just submitted my art to $BORK Hub for the $FLAME Contest 🔥 Upvote plz',
+              'Just submitted my art to @borkinstitute Hub for @theflamesolana Contest 🔥 Upvote plz!',
             );
             window.open(
               `https://twitter.com/intent/tweet?text=${shareText}&url=${postUrl}`,
