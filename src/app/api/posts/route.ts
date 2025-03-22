@@ -2,10 +2,8 @@ import { createPost } from '@/lib/services/db/post-service';
 import { createTagsIfNotExist } from '@/lib/services/db/tag-service';
 import { uploadImage } from '@/lib/services/upload-image';
 import { validateCreatePostRequest } from '@/lib/types/request/create-post-request';
-import type { ApiError } from '@/lib/types/response/api-response';
 import type { CreatePostResponse } from '@/lib/types/response/create-post-response';
 import { type NextRequest, NextResponse } from 'next/server';
-import { ZodError } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,11 +30,13 @@ export async function POST(request: NextRequest) {
       size: imageProperties.size,
     });
 
+    console.log('uploading to db');
+
     // Create post in database
     const post = await createPost({
       author: validatedData.username,
       title: validatedData.title,
-      imageUrl: imageUrl, // We're now storing the full IPFS URL
+      imageUrl: imageUrl,
       tags: validatedData.tags || [],
     });
 
@@ -59,18 +59,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating post:', error);
-
-    if (error instanceof ZodError) {
-      const apiError: ApiError = {
-        error: 'Validation failed',
-        details: error.errors,
-      };
-      return NextResponse.json(apiError, { status: 400 });
-    }
-
-    return NextResponse.json({ error: error } as ApiError, {
-      status: 500,
-    });
   }
 }
 

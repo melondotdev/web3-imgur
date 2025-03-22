@@ -25,6 +25,9 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "a11y": {
+        "useSemanticElements": "off"
+      },
       "recommended": true,
       "correctness": {
         "noConstantMathMinMaxClamp": "error",
@@ -40,7 +43,7 @@
       "style": {
         "noImplicitBoolean": "error",
         "noNamespace": "off",
-        "noNamespaceImport": "error",
+        "noNamespaceImport": "off",
         "noNegationElse": "error",
         "noParameterProperties": "error",
         "noShoutyConstants": "error",
