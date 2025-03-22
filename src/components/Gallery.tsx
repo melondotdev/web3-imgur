@@ -1,15 +1,13 @@
 import { useColumnLayout } from '@/lib/hooks/useColumnLayout';
+import { useComments } from '@/lib/hooks/useComments';
 import { useImagePreload } from '@/lib/hooks/useImagePreload';
 import { usePostLoading } from '@/lib/hooks/usePostLoading';
+import { usePostSelection } from '@/lib/hooks/usePostSelection';
+import { useTags } from '@/lib/hooks/useTags';
 import { useVotedPosts } from '@/lib/hooks/useVotedPosts';
 import type { PostSortOption } from '@/lib/services/db/get-all-posts';
-import { getComments } from '@/lib/services/db/get-comments';
-import { createComment } from '@/lib/services/request/comment-service';
-import type { TagCount } from '@/lib/types/gallery/tag';
-import type { Comment, Post } from '@/lib/types/post';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import { CreatePostModal } from './CreatePostModal';
 import { PostCard } from './PostCard';
 import { PostModal } from './PostModal';
@@ -18,166 +16,54 @@ import { GalleryHeader } from './gallery/GalleryHeader';
 
 export function Gallery() {
   const wallet = useWallet();
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
   const [sortBy, setSortBy] = useState<PostSortOption>('newest');
   const [scrollLoadingEnabled, setScrollLoadingEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [tags, setTags] = useState<TagCount[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string>('all');
-  const [tagSearch, setTagSearch] = useState('');
 
   const { posts, loading, hasMore, handleLoadMore, handleNewPost, setPosts } =
     usePostLoading(sortBy);
+  const { loadedImages, handleImageLoad, preloadImage } = useImagePreload();
+  const { columnCount, columnWidth } = useColumnLayout();
 
-  // Define handlePostModalVoteUpdate before using it
-  const handlePostModalVoteUpdate = useCallback(
-    (postId: string, newVoteCount: number) => {
-      // Update posts array
-      setPosts((prevPosts: Post[]) =>
-        prevPosts.map((post) =>
-          post.id === postId ? { ...post, votes: newVoteCount } : post,
-        ),
-      );
-
-      // Update selected post if it's the same one
-      if (selectedPost?.id === postId) {
-        setSelectedPost((prev) =>
-          prev ? { ...prev, votes: newVoteCount } : null,
-        );
-      }
-    },
-    [selectedPost, setPosts],
-  );
+  const {
+    selectedPost,
+    setSelectedPost,
+    handlePostSelect,
+    handlePostModalVoteUpdate,
+  } = usePostSelection({
+    posts,
+    loadedImages,
+    preloadImage,
+    handleImageLoad,
+    setPosts,
+  });
 
   const { votedPosts, isVoting, handleVoteClick } = useVotedPosts(
     posts,
     handlePostModalVoteUpdate,
   );
-  const { loadedImages, handleImageLoad, preloadImage } = useImagePreload();
-  const { columnCount, columnWidth } = useColumnLayout();
 
-  // Update handlePostSelect to use preloadImage
-  const handlePostSelect = useCallback(
-    async (post: Post) => {
-      // Get the most up-to-date post data from our posts array
-      const currentPost = posts.find((p) => p.id === post.id) || post;
+  const { comments, handleComment } = useComments({
+    selectedPost,
+    walletPublicKey: wallet.publicKey,
+  });
 
-      const cachedImage = loadedImages.get(currentPost.id);
-
-      if (!cachedImage) {
-        try {
-          await preloadImage(currentPost.imageUrl);
-          handleImageLoad(currentPost.id, currentPost.imageUrl);
-        } catch (error) {
-          console.error('Failed to preload image:', error);
-        }
-      }
-
-      setSelectedPost(currentPost);
-    },
-    [loadedImages, handleImageLoad, preloadImage, posts],
-  );
-
-  // Load comments when a post is selected
-  useEffect(() => {
-    if (selectedPost) {
-      getComments(selectedPost.id)
-        .then((fetchedComments) => {
-          setComments(fetchedComments);
-        })
-        .catch((error) => {
-          console.error('Failed to fetch comments:', error);
-          toast.error('Failed to load comments');
-        });
-    } else {
-      setComments([]);
-    }
-  }, [selectedPost]);
-
-  // Update the useEffect for loading tags
-  useEffect(() => {
-    const calculateTagCounts = () => {
-      // Create a map to store tag counts
-      const tagCountMap = new Map<string, number>();
-
-      // Count tags from all posts
-      for (const post of posts) {
-        if (post.tags) {
-          for (const tag of post.tags) {
-            tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1);
-          }
-        }
-      }
-
-      // Convert map to array of TagCount objects
-      const tagCounts: TagCount[] = Array.from(tagCountMap.entries()).map(
-        ([tag, count]) => ({
-          tag,
-          count,
-        }),
-      );
-
-      // Sort by count in descending order
-      tagCounts.sort((a, b) => b.count - a.count);
-
-      setTags(tagCounts);
-    };
-
-    calculateTagCounts();
-  }, [posts]);
-
-  // Update getFilteredPosts to handle 'all' tag correctly
-  const getFilteredPosts = useCallback(() => {
-    if (selectedTag === 'all') return posts;
-    return posts.filter((post) => post.tags?.includes(selectedTag));
-  }, [posts, selectedTag]);
-
-  const handleComment = async (postId: string, content: string) => {
-    try {
-      if (!wallet.publicKey) {
-        throw new Error('Wallet not connected');
-      }
-
-      const newComment = await createComment(postId, {
-        username: wallet.publicKey.toString(),
-        text: content,
-      });
-
-      // Create a properly structured comment object
-      const formattedComment: Comment = {
-        id: newComment.id,
-        author: newComment.author || wallet.publicKey.toString(),
-        content: newComment.content || content,
-        createdAt: newComment.createdAt || new Date().toISOString(),
-        votes: newComment.votes || 0,
-      };
-
-      // Update comments locally with the formatted comment
-      setComments((prev) => [...prev, formattedComment]);
-
-      // Return the formatted comment
-      return formattedComment;
-    } catch (error) {
-      console.error('Failed to create comment:', error);
-      toast.error('Failed to post comment', {
-        description: 'Please try again later',
-      });
-      throw error;
-    }
-  };
-
-  // Filtered tags computation
-  const filteredTags = tags
-    .filter((tag) => tag.tag.toLowerCase().includes(tagSearch.toLowerCase()))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 20); // Show top 20 matching tags
+  const {
+    selectedTag,
+    setSelectedTag,
+    tagSearch,
+    setTagSearch,
+    getFilteredPosts,
+    getFilteredTags,
+  } = useTags({ posts });
 
   if (loading) {
     return <div>Loading...</div>;
   }
+
+  const filteredTags = getFilteredTags();
 
   return (
     <div className="flex">
@@ -206,7 +92,7 @@ export function Gallery() {
           }
           className="px-4"
         >
-          {getFilteredPosts().map((post) => (
+          {getFilteredPosts(posts).map((post) => (
             <div
               key={post.id}
               style={{ width: columnWidth }}
