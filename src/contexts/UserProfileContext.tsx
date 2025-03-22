@@ -2,6 +2,7 @@ import { supabasePublicClient } from '@/lib/config/supabase';
 import { useWallet } from '@solana/wallet-adapter-react';
 import type { PublicKey } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { useSession } from 'next-auth/react';
 import {
   createContext,
   useCallback,
@@ -37,6 +38,7 @@ export function UserProfileProvider({
   children: React.ReactNode;
 }) {
   const { publicKey, connected, signMessage } = useWallet();
+  const { data: session } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -48,6 +50,7 @@ export function UserProfileProvider({
     async (publicKey: PublicKey) => {
       setIsLoading(true);
       try {
+        // Load the latest profile data
         const { data: user, error: fetchError } = await supabase
           .from('users')
           .select('*')
@@ -152,15 +155,78 @@ export function UserProfileProvider({
     [profile, supabase],
   );
 
-  // Handle wallet connection/disconnection
+  // Handle wallet connection/disconnection and Twitter session
   useEffect(() => {
     if (!connected || !publicKey) {
       signOut();
       return;
     }
 
-    signIn();
-  }, [connected, publicKey, signIn, signOut]);
+    const updateProfileWithTwitter = async () => {
+      try {
+        if (session?.user) {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({
+              twitter_handle: session.user.name,
+              avatar_url: session.user.image,
+              username: session.user.name,
+            })
+            .eq('wallet_address', publicKey.toString());
+
+          if (updateError) {
+            // If update fails because user doesn't exist, create new record
+            if (updateError.code === 'PGRST116') {
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  wallet_address: publicKey.toString(),
+                  twitter_handle: session.user.name,
+                  avatar_url: session.user.image,
+                  username: session.user.name,
+                });
+
+              if (insertError) {
+                console.error(
+                  'Error creating new user with Twitter data:',
+                  insertError,
+                );
+              }
+            } else {
+              console.error(
+                'Error updating user with Twitter data:',
+                updateError,
+              );
+            }
+          }
+          // Reload profile to get updated data
+          await loadProfile(publicKey);
+        }
+      } catch (err) {
+        console.error('Error updating profile with Twitter data:', err);
+      }
+    };
+
+    // Only sign in if we don't have a profile yet
+    if (!profile?.publicKey) {
+      signIn().then(() => {
+        // Then update with Twitter data if available
+        updateProfileWithTwitter();
+      });
+    } else if (session?.user) {
+      // If we already have a profile but Twitter session changed, just update Twitter data
+      updateProfileWithTwitter();
+    }
+  }, [
+    connected,
+    publicKey,
+    session,
+    profile,
+    signIn,
+    signOut,
+    supabase,
+    loadProfile,
+  ]);
 
   return (
     <UserProfileContext.Provider
