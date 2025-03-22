@@ -8,6 +8,8 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_GATEWAY_URL: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string(),
+  TWITTER_CLIENT_ID: z.string(),
+  TWITTER_CLIENT_SECRET: z.string(),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

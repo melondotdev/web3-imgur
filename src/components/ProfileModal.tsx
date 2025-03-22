@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import type { ProfileModalProps } from '@/lib/types/profile/profile';
 import { getSolscanAccountUrl } from '@/lib/utils/solana';
 import { trimAddress } from '@/lib/utils/trim-address';
 import { getXUserUrl } from '@/lib/utils/x';
@@ -16,11 +17,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { FaXTwitter } from 'react-icons/fa6';
 import { toast } from 'sonner';
-
-interface ProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { data: session, status } = useSession();
@@ -96,7 +92,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 onClick={async () => {
                   try {
                     await signIn('twitter');
-                  } catch (error) {
+                  } catch {
                     toast.error('Failed to connect to X', {
                       description: 'Please try again later',
                     });

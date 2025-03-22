@@ -1,14 +1,8 @@
 'use client';
+import type { Tab } from '@/lib/types/sidebar/tab';
 import { Egg, Flame, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-
-interface Tab {
-  name: string;
-  icon: React.ReactNode;
-  href: string;
-  disabled?: boolean;
-}
 
 const tabs: Tab[] = [
   {

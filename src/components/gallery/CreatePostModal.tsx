@@ -1,5 +1,5 @@
 import { Modal } from '@/components/base/Modal';
-import { createPost } from '@/lib/services/post-service';
+import { createPost } from '@/lib/services/request/post-service';
 import type { CreatePostForm } from '@/lib/types/form/create-post-form';
 import type { Post } from '@/lib/types/post';
 import { createPostSchema } from '@/lib/types/request/create-post-request';
@@ -176,30 +176,29 @@ export function CreatePostModal({
 
           {/* React Tag Input */}
           <div>
-            <label className="block text-yellow-500 mb-2">
+            <label htmlFor="tags-input" className="block text-yellow-500 mb-2">
               add tags (optional)
-              <ReactTags
-                tags={tags}
-                // TODO: Add suggestions
-                suggestions={[]}
-                allowDragDrop={false}
-                separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
-                handleDelete={handleDelete}
-                handleAddition={handleAddition}
-                placeholder="type and press enter..."
-                autoFocus={false}
-                inputFieldPosition="bottom"
-                allowUnique={true}
-                allowAdditionFromPaste={true}
-                editable={true}
-                clearAll={false}
-              />
-              {errors.tags && (
-                <p className="mt-2 text-red-500 text-sm">
-                  {errors.tags.message}
-                </p>
-              )}
             </label>
+            <ReactTags
+              id="tags-input"
+              tags={tags}
+              // TODO: Add suggestions
+              suggestions={[]}
+              allowDragDrop={false}
+              separators={[SEPARATORS.ENTER, SEPARATORS.COMMA]}
+              handleDelete={handleDelete}
+              handleAddition={handleAddition}
+              placeholder="type and press enter..."
+              autoFocus={false}
+              inputFieldPosition="bottom"
+              allowUnique={true}
+              allowAdditionFromPaste={true}
+              editable={true}
+              clearAll={false}
+            />
+            {errors.tags && (
+              <p className="mt-2 text-red-500 text-sm">{errors.tags.message}</p>
+            )}
           </div>
 
           <button

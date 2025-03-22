@@ -1,5 +1,6 @@
 import type { Post } from '@/lib/types/post';
 import { cn } from '@/lib/utils/cn';
+import { trimUsername } from '@/lib/utils/trim-username';
 import { Heart } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 
@@ -35,9 +36,11 @@ export function PostCard({
     handleImageLoad();
   }, [handleImageLoad]);
 
-  // Get display name - use username if available, otherwise trim wallet address
-  const displayName = post.username;
-  const avatarSeed = post.username;
+  // Get display name - use custom username if available, otherwise trim wallet address
+  const displayName = post.user?.twitter_handle || trimUsername(post.username);
+  const avatarUrl =
+    post.user?.avatar_url ||
+    `https://api.dicebear.com/6.x/identicon/svg?seed=${post.username}`;
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -47,7 +50,6 @@ export function PostCard({
 
   return (
     <div
-      // biome-ignore lint/a11y/useSemanticElements: <explanation>
       role="button"
       onClick={() => onClick(post)}
       onKeyDown={handleKeyPress}
@@ -71,13 +73,24 @@ export function PostCard({
         <div className="flex items-center gap-2 mt-2">
           <div className="flex items-center flex-1 min-w-0">
             <img
-              src={`https://api.dicebear.com/6.x/identicon/svg?seed=${avatarSeed}`}
+              src={avatarUrl}
               alt="avatar"
               className="w-6 h-6 rounded-full mr-2"
             />
             <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
               {displayName}
             </span>
+            {post.user?.twitter_handle && (
+              <a
+                href={`https://x.com/${post.user.twitter_handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="ml-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                @{post.user.twitter_handle}
+              </a>
+            )}
           </div>
           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
             <button

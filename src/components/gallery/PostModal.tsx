@@ -8,7 +8,7 @@ import {
 import {
   imageCacheService,
   signatureCacheService,
-} from '@/lib/services/cache-service';
+} from '@/lib/services/cache/cache-service';
 import {
   hasUserVotedComment,
   incrementCommentVote,
@@ -56,7 +56,6 @@ export function PostModal({
   hasVoted,
   isVoting,
   localPost,
-  onLocalVoteUpdate,
   loadedImages,
 }: PostModalProps) {
   const [newComment, setNewComment] = useState('');
@@ -157,10 +156,6 @@ export function PostModal({
       );
     }
   }
-
-  const handleCopyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
-  };
 
   const fetchVotedComments = useCallback(
     async (commentsToCheck: Comment[]) => {
@@ -271,7 +266,7 @@ export function PostModal({
   };
 
   const handleReport = (type: 'post' | 'comment', id: string) => {
-    toast.success(`${type} reported`);
+    toast.success(`${type} reported. id ${id}`);
   };
 
   const handleAddressClick = (address: string) => {
@@ -523,7 +518,6 @@ export function PostModal({
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Add a comment..."
                     className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none"
-                    autoFocus={isCommentInputVisible}
                   />
                   <button
                     type="submit"

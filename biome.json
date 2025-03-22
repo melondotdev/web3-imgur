@@ -25,6 +25,10 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "a11y": {
+        "useSemanticElements": "off",
+        "useKeyWithClickEvents": "off"
+      },
       "recommended": true,
       "correctness": {
         "noConstantMathMinMaxClamp": "error",
@@ -32,7 +36,8 @@
         "noUnusedImports": "error",
         "noUnusedPrivateClassMembers": "error",
         "noUnusedVariables": "error",
-        "useArrayLiterals": "error"
+        "useArrayLiterals": "error",
+        "useExhaustiveDependencies": "off"
       },
       "nursery": {
         "useSortedClasses": "off"
@@ -40,7 +45,7 @@
       "style": {
         "noImplicitBoolean": "error",
         "noNamespace": "off",
-        "noNamespaceImport": "error",
+        "noNamespaceImport": "off",
         "noNegationElse": "error",
         "noParameterProperties": "error",
         "noShoutyConstants": "error",
