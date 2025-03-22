@@ -16,7 +16,10 @@ import { CreatePostModal } from './CreatePostModal';
 import { GalleryHeader } from './GalleryHeader';
 import { PostCard } from './PostCard';
 
-export function Gallery({ initialPostId }: { initialPostId?: string }) {
+export function Gallery({
+  initialPostId,
+  defaultTag,
+}: { initialPostId?: string; defaultTag?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const wallet = useWallet();
@@ -27,7 +30,7 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const { posts, loading, hasMore, handleLoadMore, handleNewPost, setPosts } =
-    usePostLoading(sortBy);
+    usePostLoading({ sortBy, defaultTag });
   const { loadedImages, handleImageLoad, preloadImage } = useImagePreload();
   const { columnCount, columnWidth } = useColumnLayout();
 
@@ -61,7 +64,7 @@ export function Gallery({ initialPostId }: { initialPostId?: string }) {
     setTagSearch,
     getFilteredPosts,
     getFilteredTags,
-  } = useTags({ posts });
+  } = useTags({ posts, defaultTag });
 
   // Wrap handlePostSelect to handle both post selection and URL update
   const handlePostSelect = useCallback(

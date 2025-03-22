@@ -2,7 +2,8 @@
 import type { Tab } from '@/lib/types/sidebar/tab';
 import { Egg, Flame, Home } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const tabs: Tab[] = [
   {
@@ -11,22 +12,47 @@ const tabs: Tab[] = [
     href: '/',
   },
   {
+    name: 'FlameHub',
+    icon: <Flame className="w-5 h-5" />,
+    href: '/flamehub',
+    disabled: false,
+  },
+  {
     name: 'BorkHub',
     icon: <Egg className="w-5 h-5" />,
     href: '/borkhub',
     disabled: true,
   },
-  {
-    name: 'FlameHub',
-    icon: <Flame className="w-5 h-5" />,
-    href: '/flamehub',
-    disabled: true,
-  },
 ];
 
-// TODO Replace with Navigation Menu
+// Get tab name from pathname
+function getActiveTabFromPathname(pathname: string): string {
+  // Remove any potential post ID from the pathname
+  const basePath = pathname.split('/')[1] || '';
+
+  // Map the pathname to tab name
+  switch (basePath) {
+    case '':
+      return 'Discover';
+    case 'flamehub':
+      return 'FlameHub';
+    case 'borkhub':
+      return 'BorkHub';
+    default:
+      return 'Discover';
+  }
+}
+
 export function Sidebar() {
-  const [activeTab, setActiveTab] = useState('Discover');
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState(() =>
+    getActiveTabFromPathname(pathname),
+  );
+
+  // Update active tab when pathname changes
+  useEffect(() => {
+    setActiveTab(getActiveTabFromPathname(pathname));
+  }, [pathname]);
 
   return (
     <div className="fixed left-0 top-16 bottom-0 w-40 bg-black flex flex-col items-start py-4">
