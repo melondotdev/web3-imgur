@@ -1,17 +1,23 @@
 import { z } from 'zod';
 
+export const userProfileSchema = z.object({
+  username: z.string().optional(),
+  avatar_url: z.string().optional(),
+  twitter_handle: z.string().optional(),
+});
+
 export const commentSchema = z.object({
   id: z.string(),
   author: z.string(),
   content: z.string(),
   createdAt: z.string().datetime(),
   votes: z.number(),
-});
-
-export const userProfileSchema = z.object({
-  username: z.string().optional(),
-  avatar_url: z.string().optional(),
-  twitter_handle: z.string().optional(),
+  user: z
+    .object({
+      twitter_handle: z.string().optional(),
+      avatar_url: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const postSchema = z.object({

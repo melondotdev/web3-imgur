@@ -309,9 +309,14 @@ export function PostModal({
             <div className="p-4 border-b border-white/5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden">
-                    {/* User avatar could go here */}
-                  </div>
+                  <img
+                    src={
+                      displayPost.user?.avatar_url ||
+                      `https://api.dicebear.com/6.x/identicon/svg?seed=${displayPost.username}`
+                    }
+                    alt="avatar"
+                    className="w-10 h-10 rounded-full shrink-0"
+                  />
                   <div>
                     <h3 className="text-white font-medium">
                       <button
@@ -319,7 +324,8 @@ export function PostModal({
                         onClick={() => handleAddressClick(displayPost.username)}
                         className="hover:text-blue-400 transition-colors"
                       >
-                        {trimUsername(displayPost.username)}
+                        {displayPost.user?.twitter_handle ||
+                          trimUsername(displayPost.username)}
                       </button>
                     </h3>
                     <span className="text-sm text-gray-400">
@@ -366,9 +372,14 @@ export function PostModal({
                     className="group"
                   >
                     <div className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-800 shrink-0">
-                        {/* Comment avatar could go here */}
-                      </div>
+                      <img
+                        src={
+                          comment.user?.avatar_url ||
+                          `https://api.dicebear.com/6.x/identicon/svg?seed=${comment.author}`
+                        }
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full shrink-0"
+                      />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -376,7 +387,8 @@ export function PostModal({
                               className="text-white/90 text-sm font-medium hover:text-blue-400 transition-colors cursor-pointer"
                               onClick={() => handleAddressClick(comment.author)}
                             >
-                              {trimUsername(comment.author)}
+                              {comment.user?.twitter_handle ||
+                                trimUsername(comment.author)}
                             </span>
                             <span className="text-gray-500 text-xs">
                               {new Date(comment.createdAt).toLocaleDateString()}
