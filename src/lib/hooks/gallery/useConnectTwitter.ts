@@ -28,6 +28,8 @@ export function useConnectTwitter() {
       try {
         const supabase = supabasePublicClient();
 
+        console.log(session);
+
         // Update or create user record
         const userData = {
           wallet_address: walletAddress,

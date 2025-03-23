@@ -65,11 +65,7 @@ export function PostModal({
 
           {/* Right panel - updated to match video player style */}
           <div className="w-screen md:w-1/3 h-[55vh] md:h-full flex flex-col bg-[#121212] border-t md:border-t-0 md:border-l border-white/5 overflow-hidden min-w-0">
-            <PostHeader
-              displayPost={displayPost}
-              handleAddressClick={handleAddressClick}
-              handleReport={handleReport}
-            />
+            <PostHeader displayPost={displayPost} handleReport={handleReport} />
 
             <CommentsSection
               localComments={localComments}
