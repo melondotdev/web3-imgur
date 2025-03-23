@@ -1,29 +1,11 @@
 // import { suiAddressSchema } from '@/lib/validators/sui-address';
 import { solanaAddressSchema } from '@/lib/utils/validators';
 import { z } from 'zod';
-
-// Maximum file size (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-// Allowed file types
-const ACCEPTED_IMAGE_TYPES: readonly string[] = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-] as const;
-
-// Helper function to parse comma-separated tags
-function parseTags(value: string): string[] {
-  if (typeof value !== 'string') {
-    return [];
-  }
-  const trimmed = value.trim();
-  return trimmed
-    ? trimmed.split(',').map((tag) => tag.trim().toLowerCase())
-    : [];
-}
+import {
+  ACCEPTED_IMAGE_TYPES,
+  type AcceptedImageType,
+  MAX_FILE_SIZE,
+} from '../upload';
 
 // Schema for the create post request
 export const createPostSchema = z.object({
@@ -36,7 +18,7 @@ export const createPostSchema = z.object({
     .instanceof(File, { message: 'Image is required' })
     .refine((file) => file.size <= MAX_FILE_SIZE, 'Max file size is 10MB')
     .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file.type as AcceptedImageType),
       'Only .jpg, .jpeg, .png, .webp and .gif formats are supported',
     ),
   tags: z.array(z.string()).optional(),

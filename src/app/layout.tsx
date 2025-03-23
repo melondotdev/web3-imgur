@@ -1,28 +1,41 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-// import { SuiProvider } from '@/components/providers/SuiProvider';
 import { SolanaProvider } from '@/components/providers/SolanaProvider';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import '@suiet/wallet-kit/style.css';
 import { getClientEnv } from '@/lib/config/client-env';
+import { SessionProvider } from 'next-auth/react';
 import type { PropsWithChildren } from 'react';
 
 // This will throw if env vars are missing
 getClientEnv();
 
+const inter = Inter({ subsets: ['latin'] });
+
 export const metadata: Metadata = {
-  title: 'bork.hub',
-  description:
-    'bork.hub is where memecoin communities grow. currently in early alpha.',
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  ),
+  title: {
+    default: 'borkhub',
+    template: '%s | borkhub',
+  },
+  description: 'A decentralized image sharing platform',
+  openGraph: {
+    type: 'website',
+    siteName: 'borkhub',
+  },
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true} className={inter.className}>
         <Toaster position="top-right" />
-        {/* <SuiProvider>{children}</SuiProvider> */}
-        <SolanaProvider>{children}</SolanaProvider>
+        <SessionProvider>
+          <SolanaProvider>{children}</SolanaProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -10,23 +10,53 @@ const POSTS_PER_PAGE = 12; // This will show 3 rows on desktop (4 columns)
 
 export async function getAllPosts(
   sortBy: PostSortOption = 'newest',
-  page: number = 0
+  page = 0,
+  tag?: string,
 ): Promise<Post[]> {
-  // Get posts with pagination
-  const query = supabasePublicClient()
+  // Start with the base query
+  let query = supabasePublicClient()
     .from('posts')
-    .select('*')
-    .range(page * POSTS_PER_PAGE, (page + 1) * POSTS_PER_PAGE - 1);
+    .select(`
+      *,
+      user:users!username(
+        username,
+        avatar_url,
+        twitter_handle
+      )
+    `);
 
-  // Apply sorting based on parameter
+  // If tag is provided, filter posts by tag
+  if (tag) {
+    query = supabasePublicClient()
+      .from('posts')
+      .select(`
+        *,
+        user:users!username(
+          username,
+          avatar_url,
+          twitter_handle
+        ),
+        post_tags!inner(
+          tags!inner(
+            name
+          )
+        )
+      `)
+      .ilike('post_tags.tags.name', tag);
+  }
+
+  // Apply pagination
+  query = query.range(page * POSTS_PER_PAGE, (page + 1) * POSTS_PER_PAGE - 1);
+
+  // Apply sorting
   if (sortBy === 'newest') {
-    query.order('created_at', { ascending: false });
+    query = query.order('created_at', { ascending: false });
   } else {
-    query.order('votes', { ascending: false });
+    query = query.order('votes', { ascending: false });
   }
 
   const { data: posts, error: postsError } = await query;
-  
+
   if (postsError) {
     throw new Error(`Failed to fetch posts: ${postsError.message}`);
   }

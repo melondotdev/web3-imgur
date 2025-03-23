@@ -1,10 +1,10 @@
 'use client';
-import { Gallery } from '@/components/Gallery';
+import { Gallery } from '../gallery/Gallery';
 
-export function Main() {
-  return (
-    <div>
-      <Gallery />
-    </div>
-  );
+interface MainProps {
+  initialPostId?: string;
+}
+
+export function Main({ initialPostId }: MainProps) {
+  return <Gallery initialPostId={initialPostId} />;
 }

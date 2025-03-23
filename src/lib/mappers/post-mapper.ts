@@ -7,9 +7,16 @@ export function mapDbPostToPost(dbPost: DbPost, dbTags: DbTag[]): Post {
     username: dbPost.username,
     title: dbPost.title,
     createdAt: dbPost.created_at,
-    imageUrl: `https://api.tusky.io/files/${dbPost.image_id}/data`,
+    imageUrl: dbPost.image_id,
     tags: dbTags.map((tag) => tag.name),
     votes: dbPost.votes,
+    user: dbPost.user
+      ? {
+          username: dbPost.user.username,
+          avatar_url: dbPost.user.avatar_url,
+          twitter_handle: dbPost.user.twitter_handle,
+        }
+      : undefined,
   };
 }
 

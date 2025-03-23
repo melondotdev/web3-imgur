@@ -1,11 +1,23 @@
 import { z } from 'zod';
 
+export const userProfileSchema = z.object({
+  username: z.string().optional(),
+  avatar_url: z.string().optional(),
+  twitter_handle: z.string().optional(),
+});
+
 export const commentSchema = z.object({
   id: z.string(),
   author: z.string(),
   content: z.string(),
   createdAt: z.string().datetime(),
   votes: z.number(),
+  user: z
+    .object({
+      twitter_handle: z.string().optional(),
+      avatar_url: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const postSchema = z.object({
@@ -16,6 +28,7 @@ export const postSchema = z.object({
   imageUrl: z.string().url(),
   tags: z.array(z.string()),
   votes: z.number(),
+  user: userProfileSchema.optional(),
 });
 
 export const tagSchema = z.object({
@@ -26,3 +39,4 @@ export const tagSchema = z.object({
 export type Comment = z.infer<typeof commentSchema>;
 export type Post = z.infer<typeof postSchema>;
 export type Tag = z.infer<typeof tagSchema>;
+export type UserProfile = z.infer<typeof userProfileSchema>;

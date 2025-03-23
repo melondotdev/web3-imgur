@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+export const dbUserSchema = z.object({
+  username: z.string().optional(),
+  avatar_url: z.string().optional(),
+  twitter_handle: z.string().optional(),
+});
+
 export const dbPostSchema = z.object({
   id: z.string().uuid(),
   username: z.string(),
@@ -8,6 +14,7 @@ export const dbPostSchema = z.object({
   image_id: z.string().uuid(),
   vault_id: z.string().uuid(),
   votes: z.number().default(0),
+  user: dbUserSchema.optional(),
 });
 
 export const dbPostCommentSchema = z.object({
@@ -33,3 +40,4 @@ export type DbPost = z.infer<typeof dbPostSchema>;
 export type DbPostComment = z.infer<typeof dbPostCommentSchema>;
 export type DbPostTag = z.infer<typeof dbPostTagSchema>;
 export type DbTag = z.infer<typeof dbTagSchema>;
+export type DbUser = z.infer<typeof dbUserSchema>;

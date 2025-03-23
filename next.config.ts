@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       {
         hostname: 'assets.coingecko.com',
       },
+      {
+        hostname: 'pbs.twimg.com',
+      },
     ],
   },
   webpack: (config, { isServer }) => {
