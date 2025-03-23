@@ -174,6 +174,8 @@ export function UserProfileProvider({
             })
             .eq('wallet_address', publicKey.toString());
 
+          console.log('updated user in db');
+
           if (updateError) {
             // If update fails because user doesn't exist, create new record
             if (updateError.code === 'PGRST116') {
@@ -199,7 +201,7 @@ export function UserProfileProvider({
               );
             }
           }
-          // Reload profile to get updated data
+          // Only reload profile if we successfully updated Twitter data
           await loadProfile(publicKey);
         }
       } catch (err) {
@@ -207,26 +209,23 @@ export function UserProfileProvider({
       }
     };
 
-    // Only sign in if we don't have a profile yet
+    // Initial profile load when wallet connects
     if (!profile?.publicKey) {
-      signIn().then(() => {
-        // Then update with Twitter data if available
-        updateProfileWithTwitter();
+      loadProfile(publicKey).catch((err) => {
+        console.error('Error loading profile:', err);
+        // Only attempt sign in if profile load fails due to no user record
+        if (err.code === 'PGRST116') {
+          signIn();
+        }
       });
-    } else if (session?.user) {
-      // If we already have a profile but Twitter session changed, just update Twitter data
+    } else if (
+      session?.user &&
+      profile.publicKey.toString() === publicKey.toString()
+    ) {
+      // Only update Twitter data if the profile matches current wallet
       updateProfileWithTwitter();
     }
-  }, [
-    connected,
-    publicKey,
-    session,
-    profile,
-    signIn,
-    signOut,
-    supabase,
-    loadProfile,
-  ]);
+  }, [connected, publicKey, session, profile?.publicKey]);
 
   return (
     <UserProfileContext.Provider
