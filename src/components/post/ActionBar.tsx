@@ -1,6 +1,6 @@
 import type { ActionBarProps } from '@/lib/types/gallery/post-modal';
 import { cn } from '@/lib/utils/cn';
-import { Heart, MessageCircle, Share2, Star } from 'lucide-react';
+import { ExternalLink, Heart, MessageCircle } from 'lucide-react';
 
 export const ActionBar = ({
   handleVoteClick,
@@ -44,17 +44,17 @@ export const ActionBar = ({
           <MessageCircle className="w-6 h-6" />
           <span className="text-sm">{localComments.length}</span>
         </button>
-        <div className="flex items-center gap-1.5 text-gray-400">
+        {/* <div className="flex items-center gap-1.5 text-gray-400">
           <Star className="w-6 h-6" />
           <span className="text-sm">0</span>
-        </div>
+        </div> */}
         <button
           type="button"
           onClick={() => {
             const postUrl = encodeURIComponent(window.location.href);
             // You can customize the share text
             const shareText = encodeURIComponent(
-              'Just submitted my art to @borkinstitute Hub for @theflamesolana Contest 🔥 Upvote plz!',
+              'Just submitted my art to @borkinstitute Hub for @theflamesolana contest 🔥 Upvote plz!',
             );
             window.open(
               `https://twitter.com/intent/tweet?text=${shareText}&url=${postUrl}`,
@@ -63,7 +63,7 @@ export const ActionBar = ({
           }}
           className="text-gray-400 hover:text-white transition-colors ml-auto"
         >
-          <Share2 className="w-6 h-6" />
+          <ExternalLink className="w-6 h-6" />
         </button>
       </div>
 
