@@ -21,11 +21,11 @@ export function MainLayout({ children }: PropsWithChildren) {
                 </span>
                 <span className="text-yellow-500/70">Tag your posts with</span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
-                  #flame
+                  flame
                 </span>
                 <span className="text-yellow-500/70">
-                  and connect your X account to qualify for 1M $FLAME in prizes!
-                  🏆
+                  connect your X account and HOLD 250K $FLAME to qualify for 1M
+                  $FLAME in prizes! 🏆
                 </span>
                 <span className="text-yellow-500/80 font-bold">
                   LIMITED TIME ONLY!
