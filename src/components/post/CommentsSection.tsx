@@ -7,7 +7,7 @@ import {
 import type { CommentsSectionProps } from '@/lib/types/gallery/post-modal';
 import { cn } from '@/lib/utils/cn';
 import { trimUsername } from '@/lib/utils/trim-username';
-import { Flag, Heart, MessageCircle, MoreHorizontal, Star } from 'lucide-react';
+import { Flag, Heart, MoreHorizontal } from 'lucide-react';
 
 export const CommentsSection = ({
   localComments,
@@ -93,14 +93,14 @@ export const CommentsSection = ({
                   {comment.votes}
                 </span>
               </button>
-              <div className="text-gray-400 text-xs flex items-center gap-1.5">
+              {/* <div className="text-gray-400 text-xs flex items-center gap-1.5">
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span>0</span>
               </div>
               <div className="text-gray-400 text-xs flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" />
                 <span>0</span>
-              </div>
+              </div> */}
             </div>
           </div>
         ))}
