@@ -7,35 +7,39 @@ import {
 import type { Post } from '@/lib/types/post';
 import { trimUsername } from '@/lib/utils/trim-username';
 import { Flag, MoreHorizontal } from 'lucide-react';
+import { useState } from 'react';
+import { UserProfileModal } from './UserProfileModal';
 
 interface PostHeaderProps {
   displayPost: Post;
-  handleAddressClick: (address: string) => void;
   handleReport: (type: 'post' | 'comment', id: string) => void;
 }
 
-export const PostHeader = ({
-  displayPost,
-  handleAddressClick,
-  handleReport,
-}: PostHeaderProps) => {
+export const PostHeader = ({ displayPost, handleReport }: PostHeaderProps) => {
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
   return (
     <div className="p-4 border-b border-white/5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src={
-              displayPost.user?.avatar_url ||
-              `https://api.dicebear.com/6.x/identicon/svg?seed=${displayPost.username}`
-            }
-            alt="avatar"
-            className="w-10 h-10 rounded-full shrink-0"
-          />
+          {displayPost.user?.avatar_url ? (
+            <img
+              src={displayPost.user.avatar_url}
+              alt="avatar"
+              className="w-10 h-10 rounded-full shrink-0 object-cover"
+            />
+          ) : (
+            <img
+              src={`https://api.dicebear.com/6.x/identicon/svg?seed=${displayPost.username}`}
+              alt="avatar"
+              className="w-10 h-10 rounded-full shrink-0 object-cover"
+            />
+          )}
           <div>
             <h3 className="text-white font-medium">
               <button
                 type="button"
-                onClick={() => handleAddressClick(displayPost.username)}
+                onClick={() => setIsProfileModalOpen(true)}
                 className="hover:text-blue-400 transition-colors"
               >
                 {displayPost.user?.twitter_handle ||
@@ -75,6 +79,13 @@ export const PostHeader = ({
       {displayPost.title && (
         <p className="mt-3 text-white/90 text-sm">{displayPost.title}</p>
       )}
+
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={displayPost.user}
+        username={displayPost.username}
+      />
     </div>
   );
 };

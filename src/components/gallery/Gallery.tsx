@@ -32,7 +32,7 @@ export function Gallery({
   const { posts, loading, hasMore, handleLoadMore, handleNewPost, setPosts } =
     usePostLoading({ sortBy, defaultTag });
   const { loadedImages, handleImageLoad, preloadImage } = useImagePreload();
-  const { columnCount, columnWidth } = useColumnLayout();
+  const { columnCount } = useColumnLayout();
 
   const {
     selectedPost,
