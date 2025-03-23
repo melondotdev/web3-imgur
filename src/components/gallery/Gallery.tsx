@@ -127,8 +127,8 @@ export function Gallery({
   const filteredTags = getFilteredTags();
 
   return (
-    <div className="flex">
-      <main className="flex-1 w-screen min-w-0">
+    <div className="flex w-full">
+      <main className="w-full min-w-0 overflow-hidden">
         <GalleryHeader
           isSearchOpen={isSearchOpen}
           tagSearch={tagSearch}
@@ -147,18 +147,22 @@ export function Gallery({
               columns: columnCount,
               columnGap: '0.5rem',
               width: '100%',
-              paddingLeft: '0.5rem',
-              paddingRight: '0.5rem',
-              maxWidth: '100vw',
+              maxWidth: '100%',
+              margin: '0 auto',
               boxSizing: 'border-box',
+              overflowX: 'hidden',
+              paddingInline: '0.5rem',
             } as React.CSSProperties
           }
         >
           {getFilteredPosts(posts).map((post) => (
             <div
               key={post.id}
-              style={{ width: columnWidth }}
-              className="mb-2 break-inside-avoid inline-block"
+              style={{
+                width: '100%',
+                maxWidth: '100%',
+              }}
+              className="mb-2 break-inside-avoid"
             >
               <PostCard
                 post={post}
