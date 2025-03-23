@@ -21,16 +21,33 @@ export function MainLayout({ children }: PropsWithChildren) {
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
                 </span>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  Tag your posts with
+                  Hold 250K
                 </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
-                  #flame
+                  $FLAME
                 </span>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  and connect your X account to qualify for epic prizes! 🏆
+                  to qualify! Win up to 2M $FLAME
+                </span>
+                <a
+                  href="https://jup.ag/swap/SOL-kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:inline text-yellow-500/70 hover:text-yellow-500 transition-colors underline underline-offset-2"
+                >
+                  (kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM)
+                </a>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  + 1 $SOL! Tag posts with
+                </span>
+                <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
+                  flame
+                </span>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  and connect X account.
                 </span>
                 <span className="hidden sm:inline text-yellow-500/80 font-bold">
-                  LIMITED TIME ONLY!
+                  JOIN NOW!
                 </span>
                 <span className="px-8">•</span>
               </div>
@@ -41,16 +58,33 @@ export function MainLayout({ children }: PropsWithChildren) {
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
                 </span>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  Tag your posts with
+                  Hold 250K
+                </span>
+                <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
+                  $FLAME
+                </span>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  to qualify! Win up to 2M $FLAME
+                </span>
+                <a
+                  href="https://jup.ag/swap/SOL-kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:inline text-yellow-500/70 hover:text-yellow-500 transition-colors underline underline-offset-2"
+                >
+                  (kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM)
+                </a>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  + 1 $SOL! Tag posts with
                 </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
                   flame
                 </span>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  and connect your X account to qualify for epic prizes! 🏆
+                  and connect X account.
                 </span>
                 <span className="hidden sm:inline text-yellow-500/80 font-bold">
-                  LIMITED TIME ONLY!
+                  JOIN NOW!
                 </span>
                 <span className="px-8">•</span>
               </div>
