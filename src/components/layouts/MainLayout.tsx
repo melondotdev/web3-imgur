@@ -38,7 +38,7 @@ export function MainLayout({ children }: PropsWithChildren) {
                   (kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM)
                 </a>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  + 1 $SOL! Tag posts with
+                  + 2 $SOL! Tag posts with
                 </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
                   flame
@@ -75,7 +75,7 @@ export function MainLayout({ children }: PropsWithChildren) {
                   (kF7eBpyGf4srNeHccizaHNasEbfJ2jfwYTYN2hCYGFM)
                 </a>
                 <span className="hidden sm:inline text-yellow-500/70">
-                  + 1 $SOL! Tag posts with
+                  + 2 $SOL! Tag posts with
                 </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
                   flame
