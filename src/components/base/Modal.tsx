@@ -45,18 +45,20 @@ export function Modal({
   return (
     <>
       {/* Background overlay with click handler */}
-      <div className="fixed inset-0 bg-black/80 z-50" onClick={handleClose}>
-        {/* Modal panel */}
-        <div className="fixed inset-0 flex items-center justify-center p-4 mr-4">
+      <div
+        className="fixed w-screen inset-0 bg-black/80 z-50"
+        onClick={handleClose}
+      >
+        <div className="h-full w-screen md:p-4 md:flex md:items-center md:justify-center">
           <div
-            className="w-full max-w-6xl h-[85vh] overflow-hidden rounded-lg bg-gray-900 relative"
+            className="h-full w-screen md:h-[85vh] md:w-[90vw] md:max-h-[900px] md:rounded-lg bg-black/80 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
           >
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-white z-50"
               type="button"
               aria-label="Close modal"
             >

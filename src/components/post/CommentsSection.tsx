@@ -17,10 +17,13 @@ export const CommentsSection = ({
   handleReport,
   isCommentVoting,
 }: CommentsSectionProps) => {
+  // Sort comments by votes in descending order
+  const sortedComments = [...localComments].sort((a, b) => b.votes - a.votes);
+
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto min-h-0">
       <div className="space-y-4 p-4">
-        {localComments.map((comment) => (
+        {sortedComments.map((comment) => (
           <div key={`${comment.id}-${comment.author}`} className="group">
             <div className="flex gap-3">
               <img

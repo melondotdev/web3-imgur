@@ -21,8 +21,8 @@ export function GalleryHeader({
 }: GalleryHeaderProps) {
   return (
     <div className="mb-4 flex items-center gap-2 px-4">
-      <div className="flex items-center gap-2">
-        <div className="relative">
+      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+        <div className="relative shrink-0">
           {isSearchOpen ? (
             <input
               type="text"
@@ -47,7 +47,7 @@ export function GalleryHeader({
           )}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide min-w-0">
           {/* Add the "All" tag */}
           <button
             type="button"
@@ -82,7 +82,7 @@ export function GalleryHeader({
       <div className="flex-grow" />
 
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 ml-6 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
+        <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 ml-6 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white shrink-0">
           <span className="text-sm">
             {sortBy === 'newest' ? 'Latest' : 'Top'}
           </span>
