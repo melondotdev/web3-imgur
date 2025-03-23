@@ -128,7 +128,7 @@ export function Gallery({
 
   return (
     <div className="flex">
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 w-screen min-w-0">
         <GalleryHeader
           isSearchOpen={isSearchOpen}
           tagSearch={tagSearch}

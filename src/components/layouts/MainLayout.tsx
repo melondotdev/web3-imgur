@@ -11,7 +11,7 @@ export function MainLayout({ children }: PropsWithChildren) {
   const [showBanner, setShowBanner] = useState(true);
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="min-h-screen w-screen bg-black flex flex-col">
       {showBanner && (
         <div className="relative bg-yellow-500/10 border-b border-yellow-500/20">
           <div className="overflow-hidden whitespace-nowrap">

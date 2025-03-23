@@ -12,25 +12,23 @@ export const ImageContainer = ({
   onImageLoad,
 }: ImageContainerProps) => {
   return (
-    <div className="md:w-2/3 relative bg-black h-full">
+    <div className="w-full h-full relative bg-black flex items-center justify-center">
       {isImageLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30" />
         </div>
       )}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <img
-          src={imageUrl}
-          alt="post content"
-          className={cn(
-            'w-full h-full object-contain',
-            'drop-shadow-2xl',
-            'transition-opacity duration-200',
-            isImageLoading && 'opacity-0',
-          )}
-          onLoad={onImageLoad}
-        />
-      </div>
+      <img
+        src={imageUrl}
+        alt="post content"
+        className={cn(
+          'max-w-[90%] max-h-[90%] w-auto h-auto object-contain',
+          'drop-shadow-2xl',
+          'transition-opacity duration-200',
+          isImageLoading && 'opacity-0',
+        )}
+        onLoad={onImageLoad}
+      />
     </div>
   );
 };
