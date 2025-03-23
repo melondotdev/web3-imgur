@@ -1,5 +1,6 @@
 'use client';
 
+import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { X } from 'lucide-react';
@@ -10,7 +11,7 @@ export function MainLayout({ children }: PropsWithChildren) {
   const [showBanner, setShowBanner] = useState(true);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex flex-col">
       {showBanner && (
         <div className="relative bg-yellow-500/10 border-b border-yellow-500/20">
           <div className="overflow-hidden whitespace-nowrap">
@@ -21,11 +22,10 @@ export function MainLayout({ children }: PropsWithChildren) {
                 </span>
                 <span className="text-yellow-500/70">Tag your posts with</span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
-                  flame
+                  #flame
                 </span>
                 <span className="text-yellow-500/70">
-                  connect your X account and HOLD 250K $FLAME to qualify for 1M
-                  $FLAME in prizes! 🏆
+                  and connect your X account to qualify for epic prizes! 🏆
                 </span>
                 <span className="text-yellow-500/80 font-bold">
                   LIMITED TIME ONLY!
@@ -62,10 +62,11 @@ export function MainLayout({ children }: PropsWithChildren) {
         </div>
       )}
       <Header />
-      <div className="flex">
+      <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 ml-15">{children}</main>
       </div>
+      <Footer />
     </div>
   );
 }
