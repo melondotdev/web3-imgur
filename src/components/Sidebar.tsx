@@ -88,7 +88,7 @@ export function Sidebar() {
         >
           <Flame className="w-5 h-5" />
           <span className="text-sm whitespace-nowrap">
-            {activeTab !== 'Discover' ? activeTab : 'Other Hubs'}
+            {activeTab !== 'Discover' ? activeTab : 'Hubs'}
           </span>
           <ChevronDown className="w-4 h-4 ml-1" />
         </DropdownMenuTrigger>
