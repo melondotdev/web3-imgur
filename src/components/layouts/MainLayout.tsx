@@ -15,7 +15,7 @@ export function MainLayout({ children }: PropsWithChildren) {
       {showBanner && (
         <div className="relative bg-yellow-500/10 border-b border-yellow-500/20">
           <div className="overflow-hidden whitespace-nowrap">
-            <div className="animate-[marquee_20s_linear_infinite] inline-block">
+            <div className="animate-[marquee_40s_linear_infinite] inline-block">
               <div className="inline-flex items-center space-x-2 px-4 py-2">
                 <span className="text-yellow-500">
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
@@ -52,7 +52,7 @@ export function MainLayout({ children }: PropsWithChildren) {
                 <span className="px-8">•</span>
               </div>
             </div>
-            <div className="animate-[marquee_20s_linear_infinite] inline-block">
+            <div className="animate-[marquee_40s_linear_infinite] inline-block">
               <div className="inline-flex items-center space-x-2 px-4 py-2">
                 <span className="text-yellow-500">
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
