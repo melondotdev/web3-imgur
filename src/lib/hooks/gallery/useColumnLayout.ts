@@ -11,27 +11,33 @@ export function useColumnLayout() {
       const mainElement = document.querySelector('main');
       if (!mainElement) return;
 
-      const sidebarWidth = 160; // w-40 class from Sidebar.tsx equals 10rem (160px)
-      const minColumnWidth = 200; // Minimum width for each column
-      const gap = 16; // 1rem = 16px
-      const padding = 32; // 32px for padding (16px each side)
+      const sidebarWidth = window.innerWidth >= 1024 ? 160 : 0; // w-40 class from Sidebar.tsx equals 10rem (160px), only on desktop
+      const gap = 8; // 0.5rem gap between columns
+      const padding = 16; // 2rem total padding (0.5rem each side + any parent padding)
 
-      // Calculate available width accounting for sidebar and padding
-      const availableWidth = mainElement.clientWidth - sidebarWidth - padding;
-
-      // Calculate maximum number of columns that can fit while maintaining minimum width
-      const maxColumns = Math.floor(
-        (availableWidth + gap) / (minColumnWidth + gap),
+      // Calculate available width accounting for sidebar, padding, and viewport constraints
+      const availableWidth = Math.min(
+        mainElement.clientWidth - sidebarWidth - padding,
+        window.innerWidth - padding, // Ensure we never exceed viewport width
       );
-      const newColumnCount = Math.max(1, Math.min(maxColumns, 5)); // Between 1 and 6 columns
 
-      // Calculate the actual column width to fill available space
-      const totalGapWidth = (newColumnCount - 1) * gap;
+      // Determine column count based on screen width
+      let cols: number;
+      if (availableWidth < 480)
+        cols = 2; // Very small screens
+      else if (availableWidth < 768)
+        cols = 3; // Medium screens
+      else if (availableWidth < 1024)
+        cols = 4; // Large screens
+      else cols = 5; // Very large screens
+
+      // Calculate column width to fill the available space perfectly
+      const totalGapWidth = (cols - 1) * gap;
       const newColumnWidth = Math.floor(
-        (availableWidth - totalGapWidth) / newColumnCount,
+        (availableWidth - totalGapWidth) / cols,
       );
 
-      setColumnCount(newColumnCount);
+      setColumnCount(cols);
       setColumnWidth(newColumnWidth);
     };
 

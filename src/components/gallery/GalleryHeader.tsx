@@ -84,7 +84,7 @@ export function GalleryHeader({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 ml-6 rounded-md transition-colors bg-transparent text-gray-400 hover:text-white">
           <span className="text-sm">
-            {sortBy === 'newest' ? 'Latest Posts' : 'Most Voted'}
+            {sortBy === 'newest' ? 'Latest' : 'Top'}
           </span>
           <ChevronDown className="w-4 h-4" />
         </DropdownMenuTrigger>
@@ -93,13 +93,13 @@ export function GalleryHeader({
             className="flex items-center space-x-2 cursor-pointer"
             onClick={() => setSortBy('newest')}
           >
-            <span>Latest Posts</span>
+            <span>Latest</span>
           </DropdownMenuItem>
           <DropdownMenuItem
             className="flex items-center space-x-2 cursor-pointer"
             onClick={() => setSortBy('most-voted')}
           >
-            <span>Most Voted</span>
+            <span>Top</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

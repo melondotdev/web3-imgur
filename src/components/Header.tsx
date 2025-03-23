@@ -26,37 +26,37 @@ export function Header() {
         <div className="mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-bold text-gray-500">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-500">
                 bork.hub{' '}
-                <span className="bg-gray-500/20 text-sm px-2 py-0.5 rounded-md ml-1">
-                  ALPHA
+                <span className="bg-gray-500/20 text-xs sm:text-sm px-1 py-0.5 rounded-md ml-1">
+                  v0.11
                 </span>
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 type="button"
                 disabled={!connected}
                 onClick={() => setIsCreateModalOpen(true)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-md transition-colors ${
                   connected
                     ? 'bg-yellow-500/80 hover:bg-yellow-500 text-white'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                <Plus className="w-5 h-5" />
-                <span>create</span>
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">create</span>
               </button>
 
               {connected ? (
                 <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors w-48 bg-gray-500/20 text-gray-500 hover:bg-gray-500/30">
-                    <Wallet className="w-5 h-5" />
-                    <span>
+                  <DropdownMenuTrigger className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-md transition-colors w-32 sm:w-48 bg-gray-500/20 text-gray-500 hover:bg-gray-500/30">
+                    <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-base truncate">
                       {publicKey ? trimAddress(publicKey.toString()) : ''}
                     </span>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-32 sm:w-48">
                     <DropdownMenuItem
                       className="flex items-center space-x-2 cursor-pointer"
                       onClick={() => setIsProfileModalOpen(true)}
@@ -76,11 +76,11 @@ export function Header() {
               ) : (
                 <button
                   type="button"
-                  className="flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors w-48 bg-yellow-500 hover:bg-yellow-600 text-white"
+                  className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-md transition-colors w-32 sm:w-48 bg-yellow-500 hover:bg-yellow-600 text-white"
                   onClick={() => setVisible(true)}
                 >
-                  <Wallet className="w-5 h-5" />
-                  <span>connect wallet</span>
+                  <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">connect</span>
                 </button>
               )}
             </div>

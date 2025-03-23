@@ -47,7 +47,7 @@ export function Modal({
       {/* Background overlay with click handler */}
       <div className="fixed inset-0 bg-black/80 z-50" onClick={handleClose}>
         {/* Modal panel */}
-        <div className="fixed inset-0 flex items-center justify-center p-4">
+        <div className="fixed inset-0 flex items-center justify-center p-4 mr-4">
           <div
             className="w-full max-w-6xl h-[85vh] overflow-hidden rounded-lg bg-gray-900 relative"
             onClick={(e) => e.stopPropagation()}

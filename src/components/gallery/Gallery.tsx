@@ -145,18 +145,20 @@ export function Gallery({
           style={
             {
               columns: columnCount,
-              columnGap: '1rem',
-              width: 'calc(100% - 2rem)',
-              margin: '0 auto',
+              columnGap: '0.5rem',
+              width: '100%',
+              paddingLeft: '0.5rem',
+              paddingRight: '0.5rem',
+              maxWidth: '100vw',
+              boxSizing: 'border-box',
             } as React.CSSProperties
           }
-          className="px-4"
         >
           {getFilteredPosts(posts).map((post) => (
             <div
               key={post.id}
               style={{ width: columnWidth }}
-              className="mb-4 break-inside-avoid inline-block"
+              className="mb-2 break-inside-avoid inline-block"
             >
               <PostCard
                 post={post}

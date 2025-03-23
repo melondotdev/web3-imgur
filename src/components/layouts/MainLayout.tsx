@@ -20,14 +20,16 @@ export function MainLayout({ children }: PropsWithChildren) {
                 <span className="text-yellow-500">
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
                 </span>
-                <span className="text-yellow-500/70">Tag your posts with</span>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  Tag your posts with
+                </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
                   #flame
                 </span>
-                <span className="text-yellow-500/70">
+                <span className="hidden sm:inline text-yellow-500/70">
                   and connect your X account to qualify for epic prizes! 🏆
                 </span>
-                <span className="text-yellow-500/80 font-bold">
+                <span className="hidden sm:inline text-yellow-500/80 font-bold">
                   LIMITED TIME ONLY!
                 </span>
                 <span className="px-8">•</span>
@@ -38,14 +40,16 @@ export function MainLayout({ children }: PropsWithChildren) {
                 <span className="text-yellow-500">
                   🔥 FLAMEHUB LAUNCH COMPETITION 🔥
                 </span>
-                <span className="text-yellow-500/70">Tag your posts with</span>
+                <span className="hidden sm:inline text-yellow-500/70">
+                  Tag your posts with
+                </span>
                 <span className="font-mono bg-yellow-500/20 px-2 py-0.5 rounded text-yellow-500">
                   flame
                 </span>
-                <span className="text-yellow-500/70">
+                <span className="hidden sm:inline text-yellow-500/70">
                   and connect your X account to qualify for epic prizes! 🏆
                 </span>
-                <span className="text-yellow-500/80 font-bold">
+                <span className="hidden sm:inline text-yellow-500/80 font-bold">
                   LIMITED TIME ONLY!
                 </span>
                 <span className="px-8">•</span>
@@ -62,9 +66,18 @@ export function MainLayout({ children }: PropsWithChildren) {
         </div>
       )}
       <Header />
-      <div className="flex flex-1">
+
+      {/* Mobile Sidebar */}
+      <div className="lg:hidden border-b border-gray-800">
         <Sidebar />
-        <main className="flex-1 ml-15">{children}</main>
+      </div>
+
+      <div className="flex flex-1">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
+        <main className="flex-1 ml-0 lg:ml-15">{children}</main>
       </div>
       <Footer />
     </div>
