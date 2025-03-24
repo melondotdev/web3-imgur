@@ -3,6 +3,8 @@ import type { CreatePostForm } from '@/lib/types/form/create-post-form';
 import type { Post } from '@/lib/types/post';
 import { createPostSchema } from '@/lib/types/request/create-post-request';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useWallet } from '@solana/wallet-adapter-react';
+import bs58 from 'bs58';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { Tag } from 'react-tag-input';
@@ -15,6 +17,7 @@ export function useCreatePost(
 ) {
   const [preview, setPreview] = useState('');
   const [tags, setTags] = useState<Tag[]>([]);
+  const { signMessage } = useWallet();
 
   const {
     register,
@@ -30,14 +33,38 @@ export function useCreatePost(
 
   const onSubmit = async (data: CreatePostForm) => {
     try {
+      if (!signMessage) {
+        toast.error('Wallet not connected', {
+          description: 'Please connect your wallet to create a post',
+        });
+        return;
+      }
+
       const file =
         data.image instanceof FileList ? data.image[0] : (data.image as File);
+
+      // Create message to sign
+      const message = `Create post: ${data.title} at ${new Date().toISOString()}`;
+      const encodedMessage = new TextEncoder().encode(message);
+
+      // Request signature from wallet
+      let signature: Uint8Array;
+      try {
+        signature = await signMessage(encodedMessage);
+      } catch {
+        toast.error('Signature required', {
+          description: 'Please sign the message to create your post',
+        });
+        return;
+      }
 
       const formData = new FormData();
       formData.append('title', data.title);
       formData.append('username', data.username);
       formData.append('image', file);
       formData.append('tags', JSON.stringify(tags.map((tag) => tag.text)));
+      formData.append('signature', bs58.encode(signature));
+      formData.append('message', message);
 
       const newPost = await createPost(formData);
 
@@ -53,8 +80,15 @@ export function useCreatePost(
         window.location.reload();
       }, 500);
     } catch (error) {
+      let errorMessage = 'An error occurred while creating the post';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error && 'error' in error) {
+        errorMessage = String(error.error);
+      }
+
       toast.error('Error creating post', {
-        description: error instanceof Error ? error.message : String(error),
+        description: errorMessage,
       });
     }
   };

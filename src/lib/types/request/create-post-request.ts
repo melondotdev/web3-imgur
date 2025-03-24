@@ -22,6 +22,8 @@ export const createPostSchema = z.object({
       'Only .jpg, .jpeg, .png, .webp and .gif formats are supported',
     ),
   tags: z.array(z.string()).optional(),
+  signature: z.string().min(1, 'Signature is required').optional(),
+  message: z.string().min(1, 'Message is required').optional(),
 });
 
 // Infer the type from the schema
@@ -40,6 +42,8 @@ export function validateCreatePostRequest(
     username: formData.get('username'),
     image: formData.get('image'),
     tags: tags,
+    signature: formData.get('signature') || undefined,
+    message: formData.get('message') || undefined,
   };
 
   return createPostSchema.parse(data);
