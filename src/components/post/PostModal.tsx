@@ -54,7 +54,7 @@ export function PostModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} returnRoute={returnRoute}>
       {isOpen && (
-        <div className="flex flex-col md:flex-row h-[95vh] w-full overflow-hidden min-w-0 my-12">
+        <div className="flex flex-col md:flex-row h-full w-full overflow-hidden min-w-0">
           <div className="h-[45vh] md:h-full w-screen md:w-2/3 flex items-center justify-center bg-black min-w-0">
             <ImageContainer
               imageUrl={getImageUrl()}
@@ -64,7 +64,7 @@ export function PostModal({
           </div>
 
           {/* Right panel - updated to match video player style */}
-          <div className="w-screen md:w-1/3 h-[55vh] md:h-full flex flex-col bg-[#121212] border-t md:border-t-0 md:border-l border-white/5 overflow-hidden min-w-0">
+          <div className="w-screen md:w-1/3 flex-1 md:h-full flex flex-col bg-[#121212] border-t md:border-t-0 md:border-l border-white/5 overflow-y-auto min-w-0">
             <PostHeader displayPost={displayPost} handleReport={handleReport} />
 
             <CommentsSection
