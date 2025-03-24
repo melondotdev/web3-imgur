@@ -1,22 +1,21 @@
-import { signatureCacheService } from '@/lib/services/cache/cache-service';
 import {
   hasUserVotedComment,
   incrementCommentVote,
   removeCommentVote,
 } from '@/lib/services/db/comment-vote-service';
 import type { Comment } from '@/lib/types/post';
+import { useWallet } from '@solana/wallet-adapter-react';
+import bs58 from 'bs58';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-interface WalletState {
-  connected: boolean;
-  publicKey: { toString: () => string } | null;
-}
-
 interface UseCommentsProps {
   initialComments: Comment[];
-  wallet: WalletState;
-  onComment?: (postId: string, content: string) => Promise<Comment>;
+  wallet: {
+    connected: boolean;
+    publicKey: { toString: () => string } | null;
+  };
+  onComment?: (postId: string, content: string) => Promise<Comment | undefined>;
 }
 
 export function useComments({
@@ -24,6 +23,7 @@ export function useComments({
   wallet,
   onComment,
 }: UseCommentsProps) {
+  const { signMessage } = useWallet();
   const [newComment, setNewComment] = useState('');
   const [localComments, setLocalComments] =
     useState<Comment[]>(initialComments);
@@ -130,6 +130,11 @@ export function useComments({
         return;
       }
 
+      if (!signMessage) {
+        toast.error('Wallet does not support message signing');
+        return;
+      }
+
       if (isCommentVoting) return;
 
       try {
@@ -144,23 +149,47 @@ export function useComments({
         const originalComments = [...localComments];
 
         try {
+          // Create message to sign
+          const action = isCurrentlyVoted ? 'remove' : 'add';
+          const message = `${action} comment vote for ${commentId} at ${new Date().toISOString()}`;
+          const encodedMessage = new TextEncoder().encode(message);
+
+          // Request signature from wallet
+          let signature: Uint8Array;
+          try {
+            signature = await signMessage(encodedMessage);
+          } catch (error) {
+            toast.error('Signature required', {
+              description: 'Please sign the message to vote',
+            });
+            throw error;
+          }
+
+          const signatureData = {
+            signature: bs58.encode(signature),
+            message,
+          };
+
           // Make API call first
           if (isCurrentlyVoted) {
             // Remove vote
-            await removeCommentVote(commentId, wallet.publicKey.toString());
+            await removeCommentVote(
+              commentId,
+              wallet.publicKey.toString(),
+              signatureData,
+            );
             setVotedComments((prev) => {
               const newSet = new Set(prev);
               newSet.delete(commentId);
               return newSet;
             });
           } else {
-            // Add vote with cached signature
-            const signature =
-              signatureCacheService.get(wallet.publicKey.toString()) || '';
+            // Add vote
             await incrementCommentVote(
               commentId,
-              signature,
+              bs58.encode(signature),
               wallet.publicKey.toString(),
+              signatureData,
             );
             setVotedComments((prev) => {
               const newSet = new Set(prev);
@@ -192,7 +221,7 @@ export function useComments({
         setIsCommentVoting(false);
       }
     },
-    [wallet, isCommentVoting, votedComments, localComments],
+    [wallet, signMessage, isCommentVoting, votedComments, localComments],
   );
 
   return {
