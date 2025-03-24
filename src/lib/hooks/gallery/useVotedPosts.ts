@@ -1,4 +1,3 @@
-import { signatureCacheService } from '@/lib/services/cache/cache-service';
 import {
   hasUserVoted,
   incrementVote,
@@ -6,6 +5,7 @@ import {
 } from '@/lib/services/db/upvote-service';
 import type { Post } from '@/lib/types/post';
 import { useWallet } from '@solana/wallet-adapter-react';
+import bs58 from 'bs58';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -50,6 +50,11 @@ export function useVotedPosts(
         return;
       }
 
+      if (!wallet.signMessage) {
+        toast.error('Wallet does not support message signing');
+        return;
+      }
+
       if (isVoting) return;
 
       try {
@@ -57,8 +62,33 @@ export function useVotedPosts(
         const isCurrentlyVoted = votedPosts.has(postId);
 
         try {
+          // Create message to sign
+          const action = isCurrentlyVoted ? 'remove' : 'add';
+          const message = `${action} vote for post ${postId} at ${new Date().toISOString()}`;
+          const encodedMessage = new TextEncoder().encode(message);
+
+          // Request signature from wallet
+          let signature: Uint8Array;
+          try {
+            signature = await wallet.signMessage(encodedMessage);
+          } catch {
+            toast.error('Signature required', {
+              description: 'Please sign the message to vote',
+            });
+            return;
+          }
+
+          const signatureData = {
+            signature: bs58.encode(signature),
+            message: message,
+          };
+
           if (isCurrentlyVoted) {
-            await removeVote(postId, wallet.publicKey.toString());
+            await removeVote(
+              postId,
+              wallet.publicKey.toString(),
+              signatureData,
+            );
             setVotedPosts((prev) => {
               const newSet = new Set(prev);
               newSet.delete(postId);
@@ -66,9 +96,12 @@ export function useVotedPosts(
             });
             onVoteUpdate(postId, currentVotes - 1);
           } else {
-            const signature =
-              signatureCacheService.get(wallet.publicKey.toString()) || '';
-            await incrementVote(postId, signature, wallet.publicKey.toString());
+            await incrementVote(
+              postId,
+              bs58.encode(signature),
+              wallet.publicKey.toString(),
+              signatureData,
+            );
             setVotedPosts((prev) => {
               const newSet = new Set(prev);
               newSet.add(postId);

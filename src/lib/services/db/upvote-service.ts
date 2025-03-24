@@ -1,12 +1,39 @@
 import { supabasePublicClient } from '@/lib/config/supabase';
+import { etc, verify } from '@noble/ed25519';
+import { sha512 } from '@noble/hashes/sha512';
+import { PublicKey } from '@solana/web3.js';
+import bs58 from 'bs58';
+
+// Configure SHA-512 for ed25519
+etc.sha512Sync = (...m: Uint8Array[]) => sha512(Buffer.concat(m));
+
+interface VoteSignature {
+  signature: string;
+  message: string;
+}
 
 export async function incrementVote(
   postId: string,
   signature: string,
   address: string,
+  signatureData: VoteSignature,
 ): Promise<void> {
   try {
     console.log(`Incrementing vote for post ${postId} by address ${address}`);
+
+    // Verify signature
+    const decodedSignature = bs58.decode(signatureData.signature);
+    const message = new TextEncoder().encode(signatureData.message);
+    const publicKey = new PublicKey(address);
+
+    const isValid = await verify(
+      decodedSignature,
+      message,
+      publicKey.toBytes(),
+    );
+    if (!isValid) {
+      throw new Error('Invalid signature');
+    }
 
     // First check if user has already voted
     const { data: existingVote, error: checkError } =
@@ -49,9 +76,24 @@ export async function incrementVote(
 export async function removeVote(
   postId: string,
   address: string,
+  signatureData: VoteSignature,
 ): Promise<void> {
   try {
     console.log(`Removing vote for post ${postId} by address ${address}`);
+
+    // Verify signature
+    const decodedSignature = bs58.decode(signatureData.signature);
+    const message = new TextEncoder().encode(signatureData.message);
+    const publicKey = new PublicKey(address);
+
+    const isValid = await verify(
+      decodedSignature,
+      message,
+      publicKey.toBytes(),
+    );
+    if (!isValid) {
+      throw new Error('Invalid signature');
+    }
 
     const { error } = await supabasePublicClient().rpc('remove_vote', {
       post_id: postId,
