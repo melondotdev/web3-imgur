@@ -12,8 +12,10 @@ export async function createComment(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      content: data.text,
-      author: data.username,
+      username: data.username,
+      text: data.text,
+      signature: data.signature,
+      message: data.message,
     }),
   });
 
