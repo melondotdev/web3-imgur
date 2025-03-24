@@ -108,7 +108,26 @@ export function UserProfileProvider({
         throw new Error('Authentication failed');
       }
 
-      // Load profile after successful auth
+      // Check if user exists, if not create them
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('wallet_address')
+        .eq('wallet_address', publicKey.toString())
+        .single();
+
+      if (!existingUser) {
+        const { error: createError } = await supabase.from('users').insert({
+          wallet_address: publicKey.toString(),
+          username: publicKey.toString(), // Use wallet address as initial username
+        });
+
+        if (createError) {
+          console.error('Error creating new user:', createError);
+          throw new Error('Failed to create user profile');
+        }
+      }
+
+      // Load profile after successful auth and user creation
       await loadProfile(publicKey);
     } catch (err) {
       console.error('Sign in error:', err);
@@ -116,7 +135,7 @@ export function UserProfileProvider({
     } finally {
       setIsLoading(false);
     }
-  }, [publicKey, signMessage, loadProfile]);
+  }, [publicKey, signMessage, loadProfile, supabase]);
 
   const signOut = useCallback(async () => {
     setProfile(null);
@@ -209,23 +228,56 @@ export function UserProfileProvider({
       }
     };
 
-    // Initial profile load when wallet connects
-    if (!profile?.publicKey) {
-      loadProfile(publicKey).catch((err) => {
-        console.error('Error loading profile:', err);
-        // Only attempt sign in if profile load fails due to no user record
-        if (err.code === 'PGRST116') {
-          signIn();
+    // Initial profile load or sign in when wallet connects
+    const initializeProfile = async () => {
+      if (!profile?.publicKey) {
+        try {
+          // Check if user exists first
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('wallet_address')
+            .eq('wallet_address', publicKey.toString())
+            .single();
+
+          if (existingUser) {
+            // If user exists, load their profile
+            await loadProfile(publicKey);
+          } else {
+            // If no user exists, trigger sign in flow which will create the user
+            await signIn();
+          }
+        } catch (err) {
+          // If error is no user found, trigger sign in
+          if (
+            typeof err === 'object' &&
+            err &&
+            'code' in err &&
+            err.code === 'PGRST116'
+          ) {
+            await signIn();
+          } else {
+            console.error('Error initializing profile:', err);
+          }
         }
-      });
-    } else if (
-      session?.user &&
-      profile.publicKey.toString() === publicKey.toString()
-    ) {
-      // Only update Twitter data if the profile matches current wallet
-      updateProfileWithTwitter();
-    }
-  }, [connected, publicKey, session, profile?.publicKey]);
+      } else if (
+        session?.user &&
+        profile.publicKey.toString() === publicKey.toString()
+      ) {
+        // Only update Twitter data if the profile matches current wallet
+        await updateProfileWithTwitter();
+      }
+    };
+
+    initializeProfile();
+  }, [
+    connected,
+    publicKey,
+    session,
+    profile?.publicKey,
+    loadProfile,
+    signIn,
+    supabase,
+  ]);
 
   return (
     <UserProfileContext.Provider

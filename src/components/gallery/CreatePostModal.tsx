@@ -25,7 +25,7 @@ export function CreatePostModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <form onSubmit={onSubmit} className="mx-auto p-6 w-full max-w-2xl">
+      <form onSubmit={onSubmit} className="mx-auto w-full max-w-2xl">
         <h2 className="mb-6 text-xl text-yellow-500">create new post</h2>
         <div className="space-y-4">
           {preview ? (

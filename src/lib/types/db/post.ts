@@ -11,7 +11,7 @@ export const dbPostSchema = z.object({
   username: z.string(),
   title: z.string(),
   created_at: z.string().datetime(),
-  image_id: z.string().uuid(),
+  image_id: z.string(),
   vault_id: z.string().uuid(),
   votes: z.number().default(0),
   user: dbUserSchema.optional(),
